@@ -61,6 +61,27 @@ export async function createPerson (req,res) {
     }
 }
 
+export async function readPerson (req,res) {
+    const { personId } = req.params;
+    try {
+        const person = await Person.findOne({ personId });
+        if (!person) return res.status(404).send({ message: `The person ${personId} does not exist` });
+        return res.status(200).send({
+            person: {
+                personId: person.personId,
+                name: person.name,
+                registered: person.registered,
+                qrurl: person.qrurl,
+                room: person.room
+            },
+            message: `Fetched ${person.name}` 
+        });
+    } catch(err) {
+        console.error(err);
+        return res.status(500).send({ message: err.message });
+    }
+}
+
 export async function updatePerson (req,res) {
     const { name } = req.body;
     try {
