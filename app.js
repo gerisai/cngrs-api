@@ -4,13 +4,15 @@ import cookieParser from 'cookie-parser';
 
 import userRouter from './routes/users.js';
 import authRouter from './routes/auth.js';
+import personRouter from './routes/person.js';
 
 const app = express();
 
 app.use(express.json());
 app.use(cookieParser());
-app.use('/user',userRouter);
-app.use('/auth',authRouter);
+app.use('/user', userRouter);
+app.use('/auth', authRouter);
+app.use('/person', personRouter);
 
 // catch 404 and forward to error handler
 app.use(function(r, s, next) {
