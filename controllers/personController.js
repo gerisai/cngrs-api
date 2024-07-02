@@ -9,7 +9,7 @@ import debug from 'debug'
 const debugperson = debug('api:controllers');
 
 function createPersonId(name) {
-    return name.normalize("NFD").replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\ /g,'')
+    return name.normalize("NFD").replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\ /g,'');
 }
 
 export async function createPerson (req,res) {
@@ -21,7 +21,7 @@ export async function createPerson (req,res) {
         const fileName = `${personId}.svg`
 
         await toFile(fileName,personId);
-        debugperson(`Created SVG image for ${fileName}`);
+        debugperson(`Created SVG image for ${fileName} locally`);
 
         const stream = createReadStream(fileName)
 
@@ -49,7 +49,7 @@ export async function createPerson (req,res) {
 
         await unLink(fileName);
 
-        debugperson(`Removed ${fileName} successfully`)
+        debugperson(`Removed local ${fileName} successfully`)
 
         return res.status(200).send({
             name: newPerson.name,
