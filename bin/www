@@ -6,10 +6,7 @@
 import app from '../app.js';
 import http from 'http';
 import mongoose from 'mongoose';
-import debug from 'debug'
-
-// Set up debug
-const debugapi = debug('api:server');
+import logger from '../util/logging.js'
 
 //Set up MongoDB
 const uri = `${process.env.DB_STRING}`;
@@ -33,10 +30,10 @@ const server = http.createServer(app);
 
 try {
   await mongoose.connect(uri);
-  debugapi('connected to DB');
+  logger.info('Connected to DB');
   server.listen(port, (err) => {
     if (err) console.error(err);
-    debugapi('Server running...')
+    logger.info('Server running...');
   });
 } catch (err) {
   console.error(err)
@@ -104,5 +101,5 @@ function onListening() {
   const bind = typeof addr === 'string'
     ? 'pipe ' + addr
     : 'port ' + addr.port;
-  debugapi('Listening on ' + bind);
+  logger.info(`Listening on ${bind}`);
 }

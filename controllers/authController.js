@@ -1,6 +1,7 @@
 import User from '../models/user.js';
 import jwt from 'jsonwebtoken';
 import { promisify } from 'util';
+import logger from '../util/logging.js';
 
 function signToken(id) {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -11,18 +12,23 @@ function signToken(id) {
 export function createToken (user, code, req, res) {
     const token = signToken(user.username);
 
+    logger.verbose('Created user token');
+
     // configure cookie in response
     res.cookie('token', token, {
         httpOnly: true,
         secure: req.secure || req.headers['x-forwarded-proto'] === 'https'
     });
 
+    logger.verbose('Set token cookie');
+
     // remove user password from output
     user.password = undefined;
     return res.status(code).send({
-        status: 'Successfully created user token',
-        data: {
-            user
+        message: 'Successfully created user token',
+        user: {
+            username: user.username,
+            name: user.name
         }
     });
 }
@@ -30,23 +36,31 @@ export function createToken (user, code, req, res) {
 export async function login (req, res) {
     const { username, password } = req.body;
 
-    // check payload
+    // Check payload
     if (!username || !password) {
-        return res.status(400).send('Username and password are required');
+        logger.verbose('Username and/or password not provided for login.');
+        return res.status(400).send({ message: 'Username and password are required' });
     }
 
-    // check log in details
+    // Check log in details
     const user = await User.findOne({ username });
     if (!user) {
-        return res.status(404).send('User does not exist');
+        logger.verbose(`Unexistent user ${username} cannot login`);
+        return res.status(404).send({ message: 'User does not exist' });
     }
 
-    user.comparePassword(password, function (err, isMatch){
-        if(err) return res.status(500).send(`Unexpected error, please try again. Details: ${err.message}`);
-        if (isMatch) return createToken(user, 200, req, res);
-        
-        return res.status(401).send('Incorrect username or password');
-    });
+    try {
+        const isMatch = await promisify(user.comparePassword)(password);
+        if (isMatch) {
+            logger.info(`User ${username} logged in`);
+            return createToken(user, 200, req, res);
+        }
+        logger.info(`Failed login attempt by user ${username}`);
+        return res.status(401).send({ message: 'Incorrect username or password' });
+    } catch(err) {
+        logger.error(err);
+        return res.status(500).send({ message: `Unexpected error, please try again: ${err.message}` });
+    }
 }
 
 export async function checkAuth (req,res) {
@@ -57,18 +71,26 @@ export async function checkAuth (req,res) {
 
         try {
             const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+            logger.verbose('Decoded JWT successfully');
             currentUser = await User.findOne({ username: decoded.id });
-            return res.status(200).send({ username: currentUser.username });
+            logger.verbose(`User ${currentUser.username} is authenticated`);
+            return res.status(200).send({
+                message: 'User is authenticated',
+                username: currentUser.username 
+            });
         } catch (err) {
             res.clearCookie('token');
-            return res.status(500).send(err.message)
+            logger.error(err);
+            return res.status(500).send({ message: `Authentication failure: ${err.message}` });
         }
     } else {
-        return res.status(403).send('Unauthorized');
+        logger.info('User is not authenticated');
+        return res.status(403).send({ message: 'Unauthorized' });
     }
 }
 
 export async function logout (_,res) {
     res.clearCookie('token');
-    return res.status(200).send('User logged out');
+    logger.verbose('User logged out');
+    return res.status(200).send({ message: 'User logged out' });
 }

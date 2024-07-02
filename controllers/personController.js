@@ -3,10 +3,7 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client
 import { createReadStream, unlink } from 'fs';
 import QRCode from 'qrcode';
 import { promisify } from 'util';
-import debug from 'debug'
-
-// Set up debug
-const debugperson = debug('api:controllers');
+import logger from '../util/logging.js';
 
 function createPersonId(name) {
     return name.normalize("NFD").replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\ /g,'');
@@ -21,7 +18,7 @@ export async function createPerson (req,res) {
         const fileName = `${personId}.svg`
 
         await toFile(fileName,personId);
-        debugperson(`Created SVG image for ${fileName} locally`);
+        logger.debug(`Created SVG image for ${fileName} locally`);
 
         const stream = createReadStream(fileName)
 
@@ -35,7 +32,7 @@ export async function createPerson (req,res) {
 
         await client.send(command);
 
-        debugperson(`Uploaded ${fileName} to ${process.env.S3_BUCKET_NAME} S3 bucket`);
+        logger.verbose(`Uploaded ${fileName} to ${process.env.S3_BUCKET_NAME} S3 bucket`);
 
         const newPerson = await Person.create({
             personId: personId,
@@ -45,11 +42,11 @@ export async function createPerson (req,res) {
             qrurl: `https://${process.env.S3_BUCKET_URI}/${fileName}`
         });
 
-        debugperson(`Created person ${personId} in DB with ID: ${newPerson.id}`);
+        logger.verbose(`Created person ${personId} in DB with ID: ${newPerson.id}`);
 
         await unLink(fileName);
 
-        debugperson(`Removed local ${fileName} successfully`)
+        logger.debug(`Removed local ${fileName} successfully`)
 
         return res.status(200).send({
             name: newPerson.name,
@@ -91,7 +88,7 @@ export async function updatePerson (req,res) {
         delete req.body.personId // personId cannot be changed
         Object.assign(person,req.body); // assign updated properties
         const personUpdated = await person.save(); // No password but keeping consistency
-        debugperson(`Updated person ${personUpdated.name}`);
+        logger.verbose(`Updated person ${personUpdated.name}`);
         return res.status(200).send({ 
             ...personUpdated,
             message: `Person ${personUpdated.name} updated` 
@@ -107,7 +104,7 @@ export async function deletePerson (req,res) {
         const person = await Person.findOneAndDelete({ personId: req.params.personId });
         if (!person) return res.status(404).send({ message: 'Unexistent person' });
         
-        debugperson(`Deleted ${person.name} successfully`);
+        logger.verbose(`Deleted ${person.name} successfully`);
 
         const client = new S3Client({});
         const command = new DeleteObjectCommand({
@@ -117,7 +114,7 @@ export async function deletePerson (req,res) {
 
         await client.send(command);
 
-        debugperson(`Deleted ${person.personId}.svg successfully from ${process.env.S3_BUCKET_NAME} S3 bucket`);
+        logger.verbose(`Deleted ${person.personId}.svg successfully from ${process.env.S3_BUCKET_NAME} S3 bucket`);
 
         return res.status(200).send({ message: `User ${person.name} deleted successfully` });
     } catch (err) {
