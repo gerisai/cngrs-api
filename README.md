@@ -3,8 +3,10 @@
 API to support user and inventory for CNGRS assistance, registering and management
 
 ## Models
-- User
+- User: Authentication and CRUD operations
+- Person: CRUD operations
 
 ## Controllers
 - User
+- Person
 - Auth
