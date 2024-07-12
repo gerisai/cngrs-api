@@ -17,10 +17,6 @@ const PersonSchema = new mongoose.Schema({
         required: true,
         default: false
     },
-    qrurl: {
-        type: String,
-        required: true
-    },
     room: String
 });
 
