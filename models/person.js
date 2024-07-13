@@ -17,6 +17,8 @@ const PersonSchema = new mongoose.Schema({
         required: true,
         default: false
     },
+    zone: String,
+    branch: String,
     room: String
 });
 
