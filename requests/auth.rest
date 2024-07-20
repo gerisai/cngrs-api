@@ -1,0 +1,20 @@
+@baseUrl = http://localhost:3000
+
+# Create JWT
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "gerardoisai",
+  "password": "p@55word"
+}
+
+###
+
+# Get status
+GET {{baseUrl}}/auth/status
+
+###
+
+# Logout
+GET {{baseUrl}}/auth/logout
