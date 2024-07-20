@@ -27,7 +27,6 @@ const UserSchema = new mongoose.Schema({
 UserSchema.pre('save', function(next) {
     var user = this; // required for scoping within call backs
     if (!user.isModified('password')) return next();
-    console.log('called!')
     bcrypt.genSalt(SALT_WORK_FACTOR, function(err, salt) {
         if (err) return next(err)
 
@@ -40,11 +39,13 @@ UserSchema.pre('save', function(next) {
     })
 });
 
-UserSchema.methods.comparePassword = function (candidatePassword, cb) {
-    bcrypt.compare(candidatePassword, this.password, function(err, isMatch) {
-        if (err) return cb(err);
-        cb(null, isMatch);
-    });
+UserSchema.methods.comparePassword = async function (candidatePassword) {
+    try {
+        const isMatch = await bcrypt.compare(candidatePassword, this.password);
+        return isMatch
+    } catch(err) {
+        throw new Error(err);
+    }
 }
 
 const User = mongoose.model("User", UserSchema);

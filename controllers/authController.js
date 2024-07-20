@@ -50,7 +50,7 @@ export async function login (req, res) {
     }
 
     try {
-        const isMatch = await promisify(user.comparePassword)(password);
+        const isMatch = await user.comparePassword(password);
         if (isMatch) {
             logger.info(`User ${username} logged in`);
             return createToken(user, 200, req, res);
@@ -63,7 +63,7 @@ export async function login (req, res) {
     }
 }
 
-export async function checkAuth (req,res) {
+export async function checkAuth (req,res, next) {
     let currentUser;
 
     if (req.cookies.token) {
@@ -74,10 +74,7 @@ export async function checkAuth (req,res) {
             logger.verbose('Decoded JWT successfully');
             currentUser = await User.findOne({ username: decoded.id });
             logger.verbose(`User ${currentUser.username} is authenticated`);
-            return res.status(200).send({
-                message: 'User is authenticated',
-                username: currentUser.username 
-            });
+            next();
         } catch (err) {
             res.clearCookie('token');
             logger.error(err);
