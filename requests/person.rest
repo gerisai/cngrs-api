@@ -1,0 +1,29 @@
+@baseUrl = http://localhost:3000
+
+# Create Person
+POST {{baseUrl}}/person
+Content-Type: application/json
+
+{
+  "name": "Josué López"
+}
+
+###
+# Get Person
+GET {{baseUrl}}/person/josuelopez
+
+###
+# Update Person
+PUT {{baseUrl}}/person
+Content-Type: application/json
+
+{
+  "personId": "josuelopez",
+  "registered": false
+}
+
+###
+
+# Delete Person
+DELETE {{baseUrl}}/person/josuelopez
+Content-Type: application/json

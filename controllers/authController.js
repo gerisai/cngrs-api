@@ -39,14 +39,14 @@ export async function login (req, res) {
 
     // Check payload
     if (!username || !password) {
-        logger.verbose('Username and/or password not provided for login.');
+        logger.info('Username and/or password not provided for login.');
         return res.status(400).send({ message: 'Username and password are required' });
     }
 
     // Check log in details
     const user = await User.findOne({ username });
     if (!user) {
-        logger.verbose(`Unexistent user ${username} cannot login`);
+        logger.info(`Unexistent user ${username} cannot login`);
         return res.status(404).send({ message: 'User does not exist' });
     }
 
@@ -56,7 +56,7 @@ export async function login (req, res) {
             logger.info(`User ${username} logged in`);
             return createToken(user, 200, req, res);
         }
-        logger.info(`Failed login attempt by user ${username}`);
+        logger.warn(`Failed login attempt by user ${username}`);
         return res.status(401).send({ message: 'Incorrect username or password' });
     } catch(err) {
         logger.error(err);
@@ -78,25 +78,29 @@ export async function checkAuth (req,res, next) {
             req.user = currentUser;
             next();
         } catch (err) {
+            if (err.name == 'TokenExpiredError') {
+                logger.warn('User token is expired');
+                return res.status(403).send({ message: 'Unauthorized: Session has expired' }); 
+            }
             res.clearCookie('token');
             logger.error(err);
             return res.status(500).send({ message: `Authentication failure: ${err.message}` });
         }
     } else {
-        logger.info('User is not authenticated');
-        return res.status(403).send({ message: 'Unauthorized' });
+        logger.warn('User is not authenticated');
+        return res.status(403).send({ message: 'Unauthorized: User has not logged in' });
     }
 }
 
 export async function checkRole (req,res,next) {
-    const { user, path } = req;
+    const { user, originalUrl } = req;
     logger.verbose(`Checking authorization level for ${user.username} with role ${user.role}`);
-    const isAuthorized = roleMappings[user.role].test(path);
+    const isAuthorized = roleMappings[user.role].test(originalUrl);
     
     if (isAuthorized) {
         next()
     } else {
-        logger.info(`User ${user.username} with role ${user.role} cannot perform ${req.method} on ${req.originalUrl}`);
+        logger.warn(`User ${user.username} with role ${user.role} cannot perform ${req.method} on ${req.originalUrl}`);
         return res.status(403).send({ message: 'Unauthorized' });
     }
 }

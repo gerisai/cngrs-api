@@ -1,7 +1,12 @@
 import User from '../models/user.js';
 import logger from '../util/logging.js';
+import auditAction from '../util/audit.js';
+
+const resource = 'USER';
 
 export async function createUser (req, res) {
+    const action = 'CREATE';
+    
     try {
         const newUser = await User.create({
             username: req.body.username,
@@ -10,6 +15,8 @@ export async function createUser (req, res) {
             role: req.body.role
         });
         logger.info(`Created new user ${newUser.username}`);
+        auditAction(req.user.username, action, resource, newUser.username);
+        
         return res.status(200).send({ message: `User ${newUser.username} created successfully` });
     } catch(err) {
         if (err.code === 11000) {
@@ -23,6 +30,8 @@ export async function createUser (req, res) {
 
 export async function updateUser (req,res) {
     const { username } = req.body;
+    const action = 'UPDATE';
+
     try {
         const user = await User.findOne({ username });
         if (!user) {
@@ -33,6 +42,8 @@ export async function updateUser (req,res) {
         Object.assign(user,req.body); // assign updated properties
         const userUpdated = await user.save(); // must be called for the paswword to be hashed
         logger.info(`Updated user ${userUpdated.username} successfully`);
+        auditAction(req.user.username, action, resource, userUpdated.username);
+        
         return res.status(200).send({ message: `User ${userUpdated.username} updated` });
     } catch(err) {
         logger.error(err);
@@ -41,6 +52,8 @@ export async function updateUser (req,res) {
 }
 
 export async function deleteUser (req,res) {
+    const action = 'DELETE';
+    
     try {
         const user = await User.findOneAndDelete({ username: req.params.username});
         if (!user) {
@@ -48,6 +61,8 @@ export async function deleteUser (req,res) {
             return res.status(404).send({ message: 'Unexistent user' });
         }
         logger.info(`Deleted user ${user.username} successfully`);
+        auditAction(req.user.username, action, resource, user.username);
+        
         return res.status(200).send({ message: `User ${user.username} deleted successfully` });
     } catch (err) {
         logger.error(err);
