@@ -10,3 +10,6 @@ API to support user and inventory for CNGRS assistance, registering and manageme
 - User
 - Person
 - Auth
+
+# Test Resquest
+request/*.rest contain test request. Usernames and passwords are mocks and are not used in a real non-local database.
