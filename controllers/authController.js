@@ -2,6 +2,7 @@ import User from '../models/user.js';
 import jwt from 'jsonwebtoken';
 import { promisify } from 'util';
 import logger from '../util/logging.js';
+import roleMappings from './roleMappings.js';
 
 function signToken(id) {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -74,6 +75,7 @@ export async function checkAuth (req,res, next) {
             logger.verbose('Decoded JWT successfully');
             currentUser = await User.findOne({ username: decoded.id });
             logger.verbose(`User ${currentUser.username} is authenticated`);
+            req.user = currentUser;
             next();
         } catch (err) {
             res.clearCookie('token');
@@ -82,6 +84,19 @@ export async function checkAuth (req,res, next) {
         }
     } else {
         logger.info('User is not authenticated');
+        return res.status(403).send({ message: 'Unauthorized' });
+    }
+}
+
+export async function checkRole (req,res,next) {
+    const { user, path } = req;
+    logger.verbose(`Checking authorization level for ${user.username} with role ${user.role}`);
+    const isAuthorized = roleMappings[user.role].test(path);
+    
+    if (isAuthorized) {
+        next()
+    } else {
+        logger.info(`User ${user.username} with role ${user.role} cannot perform ${req.method} on ${req.originalUrl}`);
         return res.status(403).send({ message: 'Unauthorized' });
     }
 }

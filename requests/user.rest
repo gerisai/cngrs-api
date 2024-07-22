@@ -1,6 +1,6 @@
 @baseUrl = http://localhost:3000
 
-# Create User
+# Create Admin User
 POST {{baseUrl}}/user
 Content-Type: application/json
 
@@ -12,7 +12,6 @@ Content-Type: application/json
 }
 
 ###
-
 # Update user
 PUT {{baseUrl}}/user
 Content-Type: application/json
@@ -24,6 +23,17 @@ Content-Type: application/json
 }
 
 ###
-
 # Delete User
 DELETE {{baseUrl}}/user/gerardoisai
+
+###
+# Create Operator User
+POST {{baseUrl}}/user
+Content-Type: application/json
+
+{
+  "username": "msilverio",
+  "name": "Martin Silverio",
+  "role": "operator",
+  "password": "p@55word"
+}
