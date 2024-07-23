@@ -28,6 +28,31 @@ export async function createUser (req, res) {
     }
 }
 
+export async function readUser (req, res) {
+    const { username } = req.params;
+
+    try {
+        const user = await User.findOne({ username });
+        if (!user) {
+            logger.verbose(`Unexistent user ${username}`);
+            return res.status(404).send({ message: `The user ${username} does not exist` });
+        }
+        logger.info(`Read user ${user.username} successfully`);
+
+        return res.status(200).send({
+            user: {
+                username: user.username,
+                name: user.name,
+                role: user.role
+            },
+            message: `User ${user.username} fetched`
+        });
+    } catch(err) {
+        logger.error(err);
+        return res.status(500).send({ message: err.message });
+    }
+}
+
 export async function updateUser (req,res) {
     const { username } = req.body;
     const action = 'UPDATE';

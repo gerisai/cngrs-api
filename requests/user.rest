@@ -12,6 +12,11 @@ Content-Type: application/json
 }
 
 ###
+# Read User
+GET {{baseUrl}}/user/gerardoisai
+
+
+###
 # Update user
 PUT {{baseUrl}}/user
 Content-Type: application/json

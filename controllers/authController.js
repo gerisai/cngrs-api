@@ -71,10 +71,10 @@ export async function checkAuth (req,res, next) {
         const { token } = req.cookies;
 
         try {
-            const currentUser = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+            const { user } = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
             logger.verbose('Decoded JWT successfully');
-            logger.verbose(`User ${currentUser.username} is authenticated`);
-            req.user = currentUser;
+            logger.verbose(`User ${user.username} is authenticated`);
+            req.user = user;
             next();
         } catch (err) {
             if (err.name == 'TokenExpiredError') {

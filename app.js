@@ -2,7 +2,7 @@ import express from 'express';
 import createError from 'http-errors';
 import cookieParser from 'cookie-parser';
 
-import userRouter from './routes/users.js';
+import userRouter from './routes/user.js';
 import authRouter from './routes/auth.js';
 import personRouter from './routes/person.js';
 
