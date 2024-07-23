@@ -4,16 +4,16 @@ import { promisify } from 'util';
 import logger from '../util/logging.js';
 import roleMappings from './roleMappings.js';
 
-function signToken(id) {
-    return jwt.sign({ id }, process.env.JWT_SECRET, {
+function signToken(user) {
+    return jwt.sign({ user }, process.env.JWT_SECRET, {
         expiresIn: process.env.JWT_EXPIRES_IN
     });
 }
 
-export function createToken (user, code, req, res) {
-    const token = signToken(user.username);
+function createToken (user, code, req, res) {
+    const token = signToken(user);
 
-    logger.verbose('Created user token');
+    logger.verbose(`Created user token for ${user.username}`);
 
     // configure cookie in response
     res.cookie('token', token, {
@@ -21,10 +21,8 @@ export function createToken (user, code, req, res) {
         secure: req.secure || req.headers['x-forwarded-proto'] === 'https'
     });
 
-    logger.verbose('Set token cookie');
+    logger.verbose(`Set token cookie for ${user.username}`);
 
-    // remove user password from output
-    user.password = undefined;
     return res.status(code).send({
         message: 'Successfully created user token',
         user: {
@@ -54,7 +52,11 @@ export async function login (req, res) {
         const isMatch = await user.comparePassword(password);
         if (isMatch) {
             logger.info(`User ${username} logged in`);
-            return createToken(user, 200, req, res);
+            return createToken({
+                username: user.username,
+                name: user.name,
+                role: user.role
+            }, 200, req, res);
         }
         logger.warn(`Failed login attempt by user ${username}`);
         return res.status(401).send({ message: 'Incorrect username or password' });
@@ -65,15 +67,12 @@ export async function login (req, res) {
 }
 
 export async function checkAuth (req,res, next) {
-    let currentUser;
-
     if (req.cookies.token) {
         const { token } = req.cookies;
 
         try {
-            const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+            const currentUser = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
             logger.verbose('Decoded JWT successfully');
-            currentUser = await User.findOne({ username: decoded.id });
             logger.verbose(`User ${currentUser.username} is authenticated`);
             req.user = currentUser;
             next();
