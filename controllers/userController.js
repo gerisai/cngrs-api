@@ -6,6 +6,10 @@ const resource = 'USER';
 
 export async function createUser (req, res) {
     const action = 'CREATE';
+
+    if (req.body.role == 'root') {
+        return res.status(403).send({ message: `Root role is reserved and cannot be taken` });
+    }
     
     try {
         const newUser = await User.create({
@@ -56,6 +60,10 @@ export async function readUser (req, res) {
 export async function updateUser (req,res) {
     const { username } = req.body;
     const action = 'UPDATE';
+
+    if (req.body.role == 'root') {
+        return res.status(403).send({ message: `Root role is reserved and cannot be taken` });
+    }
 
     try {
         const user = await User.findOne({ username });
