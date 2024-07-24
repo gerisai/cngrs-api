@@ -2,7 +2,7 @@ import User from '../models/user.js';
 import jwt from 'jsonwebtoken';
 import { promisify } from 'util';
 import logger from '../util/logging.js';
-import roleMappings from './roleMappings.js';
+import roleMappings from '../util/roleMappings.js';
 
 function signToken(user) {
     return jwt.sign({ user }, process.env.JWT_SECRET, {
