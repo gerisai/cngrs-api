@@ -79,7 +79,7 @@ export async function checkAuth (req,res, next) {
         } catch (err) {
             if (err.name == 'TokenExpiredError') {
                 logger.warn('User token is expired');
-                return res.status(403).send({ message: 'Unauthorized: Session has expired' }); 
+                return res.status(401).send({ message: 'Unauthorized: Session has expired' });
             }
             res.clearCookie('token');
             logger.error(err);
@@ -87,7 +87,7 @@ export async function checkAuth (req,res, next) {
         }
     } else {
         logger.warn('User is not authenticated');
-        return res.status(403).send({ message: 'Unauthorized: User has not logged in' });
+        return res.status(403).send({ message: 'Forbbiden: User has not logged in' });
     }
 }
 
