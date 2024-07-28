@@ -1,5 +1,5 @@
 const roleMappings = {
-  root: /\*/,
+  root: /\.*/,
   admin: /^(\/user\/*|\/person\/*)/,
   operator: /^(\/person\/*)/
 }
