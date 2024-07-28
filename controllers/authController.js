@@ -27,7 +27,8 @@ function createToken (user, code, req, res) {
         message: 'Successfully created user token',
         user: {
             username: user.username,
-            name: user.name
+            name: user.name,
+            role: user.role // TODO: Be careful with how you store this
         }
     });
 }
