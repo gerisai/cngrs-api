@@ -57,6 +57,25 @@ export async function readUser (req, res) {
     }
 }
 
+export async function readUsers (req, res) {
+    try {
+        const users = await User.find().select({
+            username: 1,
+            name: 1,
+            role: 1
+        });
+        logger.info(`Read all users successfully`);
+
+        return res.status(200).send({
+            users,
+            message: `Users fetched successfully`
+        });
+    } catch(err) {
+        logger.error(err);
+        return res.status(500).send({ message: err.message });
+    }
+}
+
 export async function updateUser (req,res) {
     const { username } = req.body;
     const action = 'UPDATE';

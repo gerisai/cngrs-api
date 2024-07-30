@@ -1,7 +1,7 @@
 @baseUrl = http://localhost:3000
 
 # Create Admin User
-POST {{baseUrl}}/user
+POST {{baseUrl}}/users
 Content-Type: application/json
 
 {
@@ -13,8 +13,11 @@ Content-Type: application/json
 
 ###
 # Read User
-GET {{baseUrl}}/user/gerardoisai
+GET {{baseUrl}}/users/gerardoisai
 
+###
+# Read Users
+GET {{baseUrl}}/users
 
 ###
 # Update user
@@ -29,11 +32,11 @@ Content-Type: application/json
 
 ###
 # Delete User
-DELETE {{baseUrl}}/user/gerardoisai
+DELETE {{baseUrl}}/users/gerardoisai
 
 ###
 # Create Operator User
-POST {{baseUrl}}/user
+POST {{baseUrl}}/users
 Content-Type: application/json
 
 {

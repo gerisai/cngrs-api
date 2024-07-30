@@ -17,7 +17,7 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors(corsOptions));
-app.use('/user', userRouter);
+app.use('/users', userRouter);
 app.use('/auth', authRouter);
 app.use('/person', personRouter);
 
