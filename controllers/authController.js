@@ -73,7 +73,7 @@ export async function checkAuth (req,res, next) {
 
         try {
             const { user } = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
-            logger.verbose('Decoded JWT successfully');
+            logger.verbose('Decoded JWT successfully'); // TODO: Saving money by not verifying user existence in DB
             logger.verbose(`User ${user.username} is authenticated`);
             req.user = user;
             next();

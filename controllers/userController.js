@@ -64,10 +64,12 @@ export async function readUsers (req, res) {
             name: 1,
             role: 1
         });
+
+        const filteredUsers = users.filter((user) => user.username != 'root'); // Root user shall never be returned
         logger.info(`Read all users successfully`);
 
         return res.status(200).send({
-            users,
+            users: filteredUsers,
             message: `Users fetched successfully`
         });
     } catch(err) {
