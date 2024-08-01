@@ -12,6 +12,10 @@ const PersonSchema = new mongoose.Schema({
         uppercase: true,
         unique: true
     },
+    email: {
+        type: String,
+        required: true
+    },
     registered: {
         type: Boolean,
         required: true,
