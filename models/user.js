@@ -6,25 +6,48 @@ const SALT_WORK_FACTOR = 10;
 const UserSchema = new mongoose.Schema({
     username: {
         type: String,
-        required: true,
-        unique: true
+        required: [true, 'Username is required'],
+        unique: true,
+        validate: {
+            validator: function(v) {
+                return /^[a-z]+$/.test(v);
+            },
+            message: () => 'Username can only contain lowercase letters'
+        }
     },
     name: {
         type: String,
-        required: true,
-        uppercase: true
+        required: [true, 'Name is required'],
+        uppercase: true,
+        validate: {
+            validator: function(v) {
+                return /^[a-zA-Z\ ]+$/.test(v);
+            },
+            message: () => 'Username can only contain letters and spaces'
+        }
     },
     email: {
         type: String,
-        required: true
+        required: [true,'Email is required'],
+        unique: true,
+        validate: {
+            validator: function(v) {
+                return /^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i.test(v);
+            },
+            message: (props) => `${props.value} is not a valid email`
+        }
     },
     password: {
         type: String,
-        required: true
+        required: [true, 'Password is required'],
     },
     role: {
         type: String,
-        default: 'readonly'
+        enum: {
+            values: ['operator', 'admin'],
+            message: '{VALUE} is not a valid role'
+        },
+        default: 'operator'
     }
 });
 

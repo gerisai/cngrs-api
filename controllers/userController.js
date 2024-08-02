@@ -16,6 +16,7 @@ export async function createUser (req, res) {
             username: req.body.username,
             name: req.body.name,
             password: req.body.password,
+            email: req.body.email,
             role: req.body.role
         });
         logger.info(`Created new user ${newUser.username}`);
@@ -47,7 +48,8 @@ export async function readUser (req, res) {
             user: {
                 username: user.username,
                 name: user.name,
-                role: user.role
+                role: user.role,
+                email: user.email
             },
             message: `User ${user.username} fetched`
         });
