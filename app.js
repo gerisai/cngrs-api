@@ -19,7 +19,7 @@ app.use(cookieParser());
 app.use(cors(corsOptions));
 app.use('/users', userRouter);
 app.use('/auth', authRouter);
-app.use('/person', personRouter);
+app.use('/people', personRouter);
 
 // catch 404 and forward to error handler
 app.use(function(r, s, next) {
