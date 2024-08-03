@@ -93,12 +93,18 @@ export async function checkAuth (req,res, next) {
 }
 
 export async function checkRole (req,res,next) {
-    const { user, originalUrl } = req;
+    const { user, originalUrl, method } = req;
     logger.verbose(`Checking authorization level for ${user.username} with role ${user.role}`);
-    const isAuthorized = roleMappings[user.role].test(originalUrl);
+    let isAuthorized = false;
+    const policies = roleMappings[user.role];
+
+    for (const policy of policies) {
+        isAuthorized = policy.path.test(originalUrl) && policy.verbs.includes(method);
+        if (isAuthorized) break;
+    }
     
     if (isAuthorized) {
-        next()
+        next();
     } else {
         logger.warn(`User ${user.username} with role ${user.role} cannot perform ${req.method} on ${req.originalUrl}`);
         return res.status(403).send({ message: 'Unauthorized' });

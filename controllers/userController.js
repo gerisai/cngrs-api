@@ -84,8 +84,8 @@ export async function updateUser (req,res) {
     const { username } = req.body;
     const action = 'UPDATE';
 
-    if (req.body.role == 'root') {
-        return res.status(403).send({ message: `Root role is reserved and cannot be taken` });
+    if (req.body.role == 'root' || req.body.username == 'root') {
+        return res.status(403).send({ message: `Root is reserved and cannot be taken or updated` });
     }
 
     try {
@@ -109,6 +109,10 @@ export async function updateUser (req,res) {
 
 export async function deleteUser (req,res) {
     const action = 'DELETE';
+
+    if (req.params.username == 'root') {
+        return res.status(403).send({ message: `Root user is reserved and cannot be deleted` });
+    }
     
     try {
         const user = await User.findOneAndDelete({ username: req.params.username});
