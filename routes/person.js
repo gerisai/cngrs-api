@@ -5,6 +5,7 @@ import { checkAuth, checkRole } from '../controllers/authController.js';
 const router = express.Router();
 
 router.post('/', checkAuth, checkRole, personController.createPerson);
+router.get('/', checkAuth, checkRole, personController.readPeople);
 router.get('/:personId', checkAuth, checkRole, personController.readPerson);
 router.put('/', checkAuth, checkRole, personController.updatePerson);
 router.delete('/:personId', checkAuth, checkRole, personController.deletePerson);

@@ -1,7 +1,7 @@
 @baseUrl = http://localhost:3000
 
 # Create Person
-POST {{baseUrl}}/person
+POST {{baseUrl}}/people
 Content-Type: application/json
 
 {
@@ -10,11 +10,11 @@ Content-Type: application/json
 
 ###
 # Get Person
-GET {{baseUrl}}/person/josuelopez
+GET {{baseUrl}}/people/josuelopez
 
 ###
 # Update Person
-PUT {{baseUrl}}/person
+PUT {{baseUrl}}/people
 Content-Type: application/json
 
 {
@@ -25,5 +25,5 @@ Content-Type: application/json
 ###
 
 # Delete Person
-DELETE {{baseUrl}}/person/josuelopez
+DELETE {{baseUrl}}/people/josuelopez
 Content-Type: application/json

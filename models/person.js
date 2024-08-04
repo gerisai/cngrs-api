@@ -4,21 +4,40 @@ const PersonSchema = new mongoose.Schema({
     personId: {
         type: String,
         required: true,
-        unique: true
+        unique: true,
+        validate: {
+            validator: function(v) {
+                return /^[a-z]+$/.test(v);
+            },
+            message: () => 'PersonID can only contain lowercase letters'
+        }
     },
     name: {
         type: String,
-        required: true,
+        required: [true, 'Name is required'],
         uppercase: true,
-        unique: true
+        unique: true,
+        validate: {
+            validator: function(v) {
+                return /^[a-zA-Z\ ]+$/.test(v);
+            },
+            message: () => 'Username can only contain letters and spaces'
+        }
     },
     email: {
         type: String,
-        required: true
+        required: [true,'Email is required'],
+        unique: true,
+        validate: {
+            validator: function(v) {
+                return /^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i.test(v);
+            },
+            message: (props) => `${props.value} is not a valid email`
+        }
     },
     registered: {
         type: Boolean,
-        required: true,
+        required: [true, 'Register status is required'],
         default: false
     },
     zone: String,

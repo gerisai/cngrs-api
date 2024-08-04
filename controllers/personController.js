@@ -18,7 +18,10 @@ export async function createPerson (req,res) {
         const newPerson = await Person.create({
             personId: personId,
             name: req.body.name,
+            email: req.body.email,
             registered: req.body.registered || false,
+            zone: req.body.zone || null,
+            branch: req.body.branch || null,
             room: req.body.room || null
         });
 
@@ -48,10 +51,36 @@ export async function readPerson (req,res) {
             person: {
                 personId: person.personId,
                 name: person.name,
+                email: person.email,
                 registered: person.registered,
+                zone: person.zone,
+                branch: person.branch,
                 room: person.room
             },
             message: `Fetched ${person.name}` 
+        });
+    } catch(err) {
+        logger.error(err);
+        return res.status(500).send({ message: err.message });
+    }
+}
+
+export async function readPeople (req, res) {
+    try {
+        const people = await Person.find().select({
+            personId: 1,
+            name: 1,
+            email: 1,
+            zone: 1,
+            branch: 1,
+            registered: 1
+        });
+
+        logger.info(`Read all people successfully`);
+
+        return res.status(200).send({
+            people,
+            message: `Users fetched successfully`
         });
     } catch(err) {
         logger.error(err);
@@ -92,7 +121,7 @@ export async function deletePerson (req,res) {
         logger.warn(`Deleted ${person.name} successfully`);
         auditAction(req.user.username, action, resource, person.personId);
         
-        return res.status(200).send({ message: `User ${person.name} deleted successfully` });
+        return res.status(200).send({ message: `Person ${person.name} deleted successfully` });
     } catch (err) {
         logger.error(err);
         return res.status(500).send({ message: err.message });

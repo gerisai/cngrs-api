@@ -9,7 +9,7 @@ const roleMappings = {
     verbs: ['GET','PUT','POST','DELETE']
   },
   {
-    path: /^(\/person\/*)/,
+    path: /^(\/people\/*)/,
     verbs: ['GET','PUT','POST','DELETE']
   }
   ],
@@ -19,7 +19,7 @@ const roleMappings = {
       verbs: ['GET']
     },
     {
-    path: /^(\/person\/*)/,
+    path: /^(\/people\/*)/,
     verbs: ['GET','PUT','POST','DELETE']
     }
   ]
