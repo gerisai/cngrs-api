@@ -1,6 +1,8 @@
 import Person from '../models/person.js';
 import logger from '../util/logging.js';
 import auditAction from '../util/audit.js';
+import { sendMail } from '../util/mailer.js';
+import { createUploadQr, deleteQr } from '../util/qr.js';
 
 const resource = 'PERSON';
 
@@ -27,6 +29,12 @@ export async function createPerson (req,res) {
 
         logger.info(`Created person ${personId} in DB with ID: ${newPerson.id}`);
         auditAction(req.user.username, action, resource, newPerson.personId);
+
+        await createUploadQr('person',newPerson.personId);
+        sendMail('personOnboarding', newPerson.email, {
+            name: newPerson.name,
+            qrUrl: `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${personId}/${personId}`
+        });
 
         return res.status(200).send({
             name: newPerson.name,
@@ -55,7 +63,8 @@ export async function readPerson (req,res) {
                 registered: person.registered,
                 zone: person.zone,
                 branch: person.branch,
-                room: person.room
+                room: person.room,
+                accessed: person.accessed
             },
             message: `Fetched ${person.name}` 
         });

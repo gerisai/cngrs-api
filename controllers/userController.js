@@ -1,6 +1,7 @@
 import User from '../models/user.js';
 import logger from '../util/logging.js';
 import auditAction from '../util/audit.js';
+import { sendMail } from '../util/mailer.js';
 
 const resource = 'USER';
 
@@ -21,6 +22,15 @@ export async function createUser (req, res) {
         });
         logger.info(`Created new user ${newUser.username}`);
         auditAction(req.user.username, action, resource, newUser.username);
+
+        if (req.body.sendMail) {
+            sendMail('staffOnboarding', newUser.email, {
+                name: newUser.name,
+                user: newUser.username,
+                password: req.body.password,
+                logInUrl: `${process.env.CORS_ORIGIN}/login`
+            });
+        }
         
         return res.status(200).send({ message: `User ${newUser.username} created successfully` });
     } catch(err) {

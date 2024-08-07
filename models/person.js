@@ -40,9 +40,13 @@ const PersonSchema = new mongoose.Schema({
         required: [true, 'Register status is required'],
         default: false
     },
+    accessed: {
+        type: Boolean,
+        default: false
+    },
     zone: String,
     branch: String,
-    room: String
+    room: String,
 });
 
 const Person = mongoose.model("Person", PersonSchema);
