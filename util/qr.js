@@ -51,7 +51,7 @@ export async function deleteQr(id) {
     
     command = new DeleteObjectCommand({
       Bucket: process.env.S3_BUCKET_NAME,
-      Key: filename
+      Key: `${id}/${filename}`
     });
     await client.send(command);
     logger.verbose(`Deleted ${filename} successfully from ${process.env.S3_BUCKET_NAME} S3 bucket`);

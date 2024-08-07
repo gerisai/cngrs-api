@@ -122,14 +122,18 @@ export async function updatePerson (req,res) {
 
 export async function deletePerson (req,res) {
     const action = 'DELETE';
+
+    const { personId } = req.params;
     
     try {
-        const person = await Person.findOneAndDelete({ personId: req.params.personId });
+        const person = await Person.findOneAndDelete({ personId });
         if (!person) return res.status(404).send({ message: 'Unexistent person' });
         
         logger.warn(`Deleted ${person.name} successfully`);
         auditAction(req.user.username, action, resource, person.personId);
         
+        await deleteQr(personId);
+
         return res.status(200).send({ message: `Person ${person.name} deleted successfully` });
     } catch (err) {
         logger.error(err);
