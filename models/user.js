@@ -48,7 +48,8 @@ const UserSchema = new mongoose.Schema({
             message: '{VALUE} is not a valid role'
         },
         default: 'operator'
-    }
+    },
+    avatar: String
 });
 
 UserSchema.pre('save', function(next) {

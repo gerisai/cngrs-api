@@ -2,6 +2,7 @@ import User from '../models/user.js';
 import logger from '../util/logging.js';
 import auditAction from '../util/audit.js';
 import { sendMail } from '../util/mailer.js';
+import { uploadImage, deleteImage } from '../util/avatar.js';
 
 const resource = 'USER';
 
@@ -59,7 +60,8 @@ export async function readUser (req, res) {
                 username: user.username,
                 name: user.name,
                 role: user.role,
-                email: user.email
+                email: user.email,
+                avatar: user.avatar
             },
             message: `User ${user.username} fetched`
         });
@@ -126,6 +128,7 @@ export async function deleteUser (req,res) {
     
     try {
         const user = await User.findOneAndDelete({ username: req.params.username});
+        if (user.avatar) await deleteImage(req.params.username);
         if (!user) {
             logger.verbose(`Unexistent user ${req.params.username} cannot be deleted`);
             return res.status(404).send({ message: 'Unexistent user' });
@@ -134,6 +137,23 @@ export async function deleteUser (req,res) {
         auditAction(req.user.username, action, resource, user.username);
         
         return res.status(200).send({ message: `User ${user.username} deleted successfully` });
+    } catch (err) {
+        logger.error(err);
+        return res.status(500).send({ message: err.message });
+    }
+}
+
+export async function uploadAvatar (req,res) {
+    const { username } = req.params;
+    const { tempFilePath: filePath, mimetype: fileType } = req.files.avatar;
+    logger.verbose(`Received avatar upload for ${username}`);
+    const extension = fileType.split('/')[1];
+    try {
+        await uploadImage(filePath, extension, username);
+        const user = await User.findOne({ username });
+        user.avatar = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/staff/${username}/avatar`
+        await user.save();
+        return res.status(200).send({ message: 'Avatar uploaded correctly' });
     } catch (err) {
         logger.error(err);
         return res.status(500).send({ message: err.message });

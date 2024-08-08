@@ -5,6 +5,7 @@ import { checkAuth, checkRole } from '../controllers/authController.js';
 const router = express.Router();
 
 router.post('/', checkAuth, checkRole, userController.createUser);
+router.post('/:username', checkAuth, checkRole, userController.uploadAvatar);
 router.get('/', checkAuth, checkRole, userController.readUsers);
 router.get('/:username', checkAuth, checkRole, userController.readUser);
 router.put('/', checkAuth, checkRole, userController.updateUser);

@@ -28,7 +28,8 @@ function createToken (user, code, req, res) {
         user: {
             username: user.username,
             name: user.name,
-            role: user.role // TODO: Be careful with how you store this
+            role: user.role, // TODO: Be careful with how you store this
+            avatar: user.avatar
         }
     });
 }
@@ -56,7 +57,8 @@ export async function login (req, res) {
             return createToken({
                 username: user.username,
                 name: user.name,
-                role: user.role
+                role: user.role,
+                avatar: user.avatar
             }, 200, req, res);
         }
         logger.warn(`Failed login attempt by user ${username}`);
@@ -108,6 +110,19 @@ export async function checkRole (req,res,next) {
     } else {
         logger.warn(`User ${user.username} with role ${user.role} cannot perform ${req.method} on ${req.originalUrl}`);
         return res.status(403).send({ message: 'Unauthorized' });
+    }
+}
+
+export async function getAuthUser (req,res) {
+    const { token } = req.cookies;
+
+    try {
+        const { user } = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+        logger.verbose('Decoded JWT successfully'); // TODO: Saving money by not verifying user existence in DB
+        logger.verbose(`User ${user.username} is authenticated`);
+        return res.status(200).send({ user });
+    } catch (err) {
+        return res.status(403).send({ message: 'No auth user found'});
     }
 }
 

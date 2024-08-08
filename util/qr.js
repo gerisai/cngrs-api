@@ -31,7 +31,7 @@ export async function createUploadQr(resource, id) {
       Bucket: process.env.S3_BUCKET_NAME,
       Key: `${id}/${filename}`,
       Body: stream,
-      ContentType: 'image/svg+xml'
+      ContentType: `image/${ file === 'png' ? 'png' : 'svg+xml'}`
     });
     await client.send(command);
     logger.verbose(`Uploaded ${filename} to ${process.env.S3_BUCKET_NAME} S3 bucket`);
