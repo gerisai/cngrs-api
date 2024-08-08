@@ -16,12 +16,15 @@ export async function createPerson (req,res) {
     const personId = createPersonId(req.body.name);
 
     try {
-
         const newPerson = await Person.create({
             personId: personId,
             name: req.body.name,
             email: req.body.email,
             registered: req.body.registered || false,
+            gender: req.body.gender,
+            cellphone: req.body.cellphone,
+            illness: req.body.illness || null,
+            tutor: req.body.tutor || null,
             zone: req.body.zone || null,
             branch: req.body.branch || null,
             room: req.body.room || null
@@ -30,8 +33,8 @@ export async function createPerson (req,res) {
         logger.info(`Created person ${personId} in DB with ID: ${newPerson.id}`);
         auditAction(req.user.username, action, resource, newPerson.personId);
 
-        await createUploadQr('person',newPerson.personId);
-        sendMail('personOnboarding', newPerson.email, {
+        if (process.env.ENABLE_QR) await createUploadQr('person',newPerson.personId);
+        if (process.env.ENABLE_MAIL) sendMail('personOnboarding', newPerson.email, {
             name: newPerson.name,
             qrUrl: `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${personId}/${personId}`
         });
@@ -132,7 +135,7 @@ export async function deletePerson (req,res) {
         logger.warn(`Deleted ${person.name} successfully`);
         auditAction(req.user.username, action, resource, person.personId);
         
-        await deleteQr(personId);
+        if (process.env.ENABLE_QR) await deleteQr(personId);
 
         return res.status(200).send({ message: `Person ${person.name} deleted successfully` });
     } catch (err) {

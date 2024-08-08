@@ -44,6 +44,20 @@ const PersonSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    gender: {
+        type: String,
+        required: [true, "Gender is required"],
+        enum: {
+            values: ['male', 'female'],
+            message: '{VALUE} is not a valid role'
+        }
+    },
+    cellphone: {
+        type: Number,
+        required: [true, "Number is required"]
+    },
+    illness: String,
+    tutor: String,
     zone: String,
     branch: String,
     room: String,

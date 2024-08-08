@@ -23,7 +23,7 @@ export async function createUser (req, res) {
         logger.info(`Created new user ${newUser.username}`);
         auditAction(req.user.username, action, resource, newUser.username);
 
-        if (req.body.sendMail) {
+        if (req.body.sendMail && process.env.ENABLE_MAIL) {
             sendMail('staffOnboarding', newUser.email, {
                 name: newUser.name,
                 user: newUser.username,
