@@ -1,0 +1,10 @@
+services:
+  cngrs-api:
+    image: 034362034215.dkr.ecr.us-west-2.amazonaws.com/cngrs-api:latest
+    ports:
+    - "8080:8080"
+    env_file: ".env.local"
+  db:
+    image: mongo:7.0-rc
+    ports:
+      - "8081:27017"

@@ -20,7 +20,7 @@ app.use(cookieParser());
 app.use(fileUpload({
     limits: { fileSize: 5 * 1024 * 1024 },
     useTempFiles : true,
-    tempFileDir : '/tmp/'
+    tempFileDir : process.env.UPLOAD_TEMP_FILE_DIR
 }));
 app.use(cors(corsOptions));
 app.use('/users', userRouter);

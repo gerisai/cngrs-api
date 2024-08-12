@@ -22,7 +22,7 @@ export async function createUploadQr(resource, id) {
 
   for (const file of files) {
     filename = `${id}.${file}`
-    await QRCode.toFile(filename, `${process.env.API_URL}/${resource}/${id}`, qrOptions[file]);
+    await QRCode.toFile(filename, `${process.env.CORS_ORIGIN}/${resource}/${id}`, qrOptions[file]);
     logger.debug(`Created ${file.toUpperCase()} image for ${filename} locally`);
     
     stream = createReadStream(filename);
