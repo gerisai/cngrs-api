@@ -18,7 +18,8 @@ function createToken (user, code, req, res) {
     // configure cookie in response
     res.cookie('token', token, {
         httpOnly: true,
-        secure: req.secure || req.headers['x-forwarded-proto'] === 'https'
+        secure: req.secure || req.headers['x-forwarded-proto'] === 'https',
+        sameSite: 'none'
     });
 
     logger.verbose(`Set token cookie for ${user.username}`);
