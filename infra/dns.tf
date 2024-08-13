@@ -24,7 +24,7 @@ resource "aws_route53_record" "cngrs_web_cname_record_www" {
 
 resource "aws_route53_record" "cngrs_api_cname" {
   zone_id = aws_route53_zone.jidi_dns_zone.zone_id
-  name = "cngrs.api"
+  name = "api.cngrs"
   ttl = 300
   type = "CNAME"
   records = [aws_apprunner_service.cngrs_api.service_url]
