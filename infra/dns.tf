@@ -38,3 +38,11 @@ resource "aws_route53_record" "cngrs_api_cname_validation" {
   type = "CNAME"
   records = [each.value]
 }
+
+resource "aws_route53_record" "example_amazonses_verification_record" {
+  zone_id = aws_route53_zone.jidi_dns_zone.id
+  name    = "_amazonses"
+  type    = "TXT"
+  ttl     = "600"
+  records = [aws_ses_domain_identity.example.verification_token]
+}
