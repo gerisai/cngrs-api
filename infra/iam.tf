@@ -88,12 +88,7 @@ resource "aws_iam_policy" "cngrs_api_instance_policy" {
           "s3:DeleteObject"
         ]
         Effect   = "Allow"
-        Resource = "arn:aws:s3:::${var.cngrs_bucket_name}/*"
-        Condition = {
-          StringEquals = {
-            "aws:SourceAccount": "${var.aws_account}"
-          }
-        }
+        Resource = "${aws_s3_bucket.cngrs_bucket.arn}/*"
       },
       {
         Action = [
