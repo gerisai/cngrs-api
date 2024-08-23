@@ -52,7 +52,7 @@ jobs:
           --query 'imageIds[?imageTag == null]' > null-tags.json
 
           # Remove them
-          [[ $(cat null-tags.json) != '[]' ]] || aws ecr batch-delete-image --repository-name ${ECR_REPOSITORY} \
+          [[ $(cat null-tags.json) == '[]' ]] || aws ecr batch-delete-image --repository-name ${ECR_REPOSITORY} \
           --image-ids file://null-tags.json
 
           # Fetch non latest tags
@@ -60,5 +60,5 @@ jobs:
           --query 'imageIds[?imageTag != "latest"]' > non-recent-tags.json
 
           # Remove them
-          [[ $(cat non-recent-tags.json) != '[]' ]] || aws ecr batch-delete-image --repository-name ${ECR_REPOSITORY} \
-          --image-ids file://non-recent-tagsjson
+          [[ $(cat non-recent-tags.json) == '[]' ]] || aws ecr batch-delete-image --repository-name ${ECR_REPOSITORY} \
+          --image-ids file://non-recent-tags.json
