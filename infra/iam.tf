@@ -112,3 +112,43 @@ resource "aws_iam_role" "cngrs_api_instance_role" {
 
   tags = local.tags
 }
+
+resource "aws_iam_policy" "gh_actions_runners_policy" {
+  name        = "gh_actions_runers_policy"
+  path        = "/"
+  description = "GHA Runners Policy"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "ecr:CompleteLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:InitiateLayerUpload",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:PutImage"
+        ]
+        Effect   = "Allow"
+        Resource = "${aws_ecr_repository.cngrs.arn}"
+      },
+      {
+        Action = "ecr:GetAuthorizationToken"
+        Effect   = "Allow"
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_user" "gh_actions_runners" {
+  name = "gha_runners"
+  path = "/"
+
+  tags = local.tags
+}
+
+resource "aws_iam_user_policy_attachment" "test-attach" {
+  user       = aws_iam_user.gh_actions_runners.name
+  policy_arn = aws_iam_policy.gh_actions_runners_policy.arn
+}
