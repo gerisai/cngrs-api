@@ -13,8 +13,8 @@ cngrs_api_env_vars = {
   LOG_LEVEL = "debug"
   AUDIT = true
   JWT_EXPIRES_IN = "1d"
-  ENABLE_MAIL = false
-  ENABLE_QR = false
+  ENABLE_MAIL = true
+  ENABLE_QR = true
   UPLOAD_TEMP_FILE_DIR = "/tmp"
 }
 cngrs_api_domain_name = "api.cngrs.jidi.com.mx"

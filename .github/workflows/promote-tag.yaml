@@ -2,6 +2,7 @@ name:  Promote new version 🚀
 run-name: Promote new version 🚀 ${{ github.run_number }}
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main

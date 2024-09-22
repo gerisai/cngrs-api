@@ -1,4 +1,4 @@
-name: Start/Stop CNGRS API
+name: Start/Stop CNGRS API ⏯️
 run-name: Start/Stop CNGRS-API ${{ github.run_number }}
 
 on:
