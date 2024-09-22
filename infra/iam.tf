@@ -86,7 +86,7 @@ resource "aws_iam_policy" "cngrs_api_instance_policy" {
         Action = [
           "s3:PutObject",
           "s3:DeleteObject",
-          "ses:SendEmail"
+          "ses:SendRawEmail"
         ]
         Effect   = "Allow"
         Resource = "${aws_s3_bucket.cngrs_bucket.arn}/*"
