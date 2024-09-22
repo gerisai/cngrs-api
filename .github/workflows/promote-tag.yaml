@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - main
+    paths:
+      - '**.js'
 
 env:
   AWS_REGION: us-west-2

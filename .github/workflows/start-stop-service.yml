@@ -14,7 +14,7 @@ env:
   SERVICE_NAME: ${{ github.event.repository.name }}
 
 jobs:
-  deploy-ecr:
+  start-stop-service:
     runs-on: ubuntu-latest
     permissions:
       contents: read
