@@ -1,0 +1,45 @@
+name: Start/Stop CNGRS API
+run-name: Start/Stop CNGRS-API ${{ github.run_number }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      stop:
+        type: boolean
+        description: Stop the App Runner service. Start it if not set
+        default: false
+
+env:
+  AWS_REGION: us-west-2
+  SERVICE_NAME: ${{ github.event.repository.name }}
+
+jobs:
+  deploy-ecr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        id: aws-creds
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key	: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Get AppRunner Service ARN
+        run: |
+          echo "SERVICE_ARN=$(aws apprunner list-services | jq -r \
+          '.ServiceSummaryList[] | select(.ServiceName == env.SERVICE_NAME).ServiceArn')" >> $GITHUB_ENV
+
+      - name: Stop service
+        if: ${{ inputs.stop }}
+        run: |
+          aws apprunner pause-service --service-arn $SERVICE_ARN
+
+      - name: Start service
+        if: ${{ ! inputs.stop }}
+        run: |
+          aws apprunner resume-service --service-arn $SERVICE_ARN

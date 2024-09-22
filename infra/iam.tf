@@ -42,7 +42,7 @@ resource "aws_iam_policy" "cngrs_api_access_policy" {
           "ecr:BatchCheckLayerAvailability",
           "ecr:BatchGetImage",
           "ecr:DescribeImages",
-          "ecr:GetAuthorizationToken"
+          "ecr:GetAuthorizationToken",
         ]
         Effect   = "Allow"
         Resource = "*"
@@ -134,6 +134,16 @@ resource "aws_iam_policy" "gh_actions_runners_policy" {
       },
       {
         Action = "ecr:GetAuthorizationToken"
+        Effect   = "Allow"
+        Resource = "*"
+      },
+            {
+        Action = [
+          "apprunner:ListServices",
+          "apprunner:PauseService",
+          "apprunner:ResumeService",
+          "apprunner:StartDeployment"
+        ]
         Effect   = "Allow"
         Resource = "*"
       }

@@ -1,5 +1,5 @@
-name: Push CNGRS-API to ECR
-run-name: Push CNGRS-API ${{ github.run_number }}
+name:  Promote new version 🚀
+run-name: Promote new version 🚀 ${{ github.run_number }}
 
 on:
   push:
@@ -8,6 +8,7 @@ on:
 
 env:
   AWS_REGION: us-west-2
+  SERVICE_NAME: ${{ github.event.repository.name }}
   ECR_REPOSITORY: ${{ github.event.repository.name }}
 
 jobs:
@@ -58,3 +59,12 @@ jobs:
           # Remove them
           [[ $(cat non-recent-tags.json) == '[]' ]] || aws ecr batch-delete-image --repository-name ${ECR_REPOSITORY} \
           --image-ids file://non-recent-tags.json
+
+      - name: Get AppRunner Service ARN
+        run: |
+            echo "SERVICE_ARN=$(aws apprunner list-services | jq -r \
+            '.ServiceSummaryList[] | select(.ServiceName == env.SERVICE_NAME).ServiceArn')" >> $GITHUB_ENV
+
+      - name: Redeploy App Runner
+        run: |
+          aws apprunner start-deployment --service-arn $SERVICE_ARN
