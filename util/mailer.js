@@ -19,7 +19,10 @@ export function sendMail (type, toAddress, values) {
       html: template,
     },
     (err) => {
-      if (err) logger.error(err);
+      if (err) {
+        logger.error(err);
+        throw new Error(err);
+      };
       logger.info(`Sent ${type} email to ${toAddress}`);
     }
   );

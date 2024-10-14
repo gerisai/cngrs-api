@@ -45,7 +45,7 @@ export async function createPerson (req,res) {
         });
     } catch (err) {
         if (err.code === 11000) err.message = `Name ${req.body.name} already exist`;
-        return res.status(400).send({ message: err.message });
+        return res.status(500).send({ message: err.message });
     }
 }
 
