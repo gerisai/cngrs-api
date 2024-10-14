@@ -6,7 +6,8 @@ const auditLogger = winston.createLogger({
       audit: 0
     },
     transports: [new winston.transports.Console()],
-    format: winston.format.combine(
+    format: process.env.NODE_ENV !== 'production' ? 
+    winston.format.combine(
       winston.format.colorize({
         colors: {
           audit: 'magenta'
@@ -14,6 +15,7 @@ const auditLogger = winston.createLogger({
       }),
       winston.format.simple()
     )
+    : winston.format.json()
 });
 
 
