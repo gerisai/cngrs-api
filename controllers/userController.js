@@ -20,7 +20,7 @@ export async function createUser (req, res) {
             password: req.body.password,
             email: req.body.email,
             role: req.body.role,
-            avatar: `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/staff/${req.body.username}/avatar`
+            avatar: null
         });
         logger.info(`Created new user ${newUser.username}`);
         auditAction(req.user.username, action, resource, newUser.username);
@@ -153,7 +153,17 @@ export async function uploadAvatar (req,res) {
     logger.verbose(`Received avatar upload for ${username}`);
     const extension = fileType.split('/')[1];
     try {
+        const user = await User.findOne({ username });
+        if (!user) {
+            logger.verbose(`Unexistent user ${username} cannot be updated`);
+            return res.status(404).send({ message: `The user ${username} does not exist` });
+        }
         await uploadImage(filePath, extension, username);
+
+        user.avatar = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/staff/${req.body.username}/avatar`
+        const userUpdated = await user.save();
+        logger.info(`Updated user ${userUpdated.username} successfully`);
+
         auditAction(req.user.username, action, resource, username);
 
         return res.status(200).send({ message: 'Avatar uploaded correctly' });
