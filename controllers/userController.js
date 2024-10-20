@@ -9,7 +9,7 @@ const resource = 'USER';
 export async function createUser (req, res) {
     const action = 'CREATE';
 
-    if (req.body.role == 'root') {
+    if (req.body.role === 'root') {
         return res.status(403).send({ message: `Root role is reserved and cannot be taken` });
     }
     
@@ -25,7 +25,8 @@ export async function createUser (req, res) {
         logger.info(`Created new user ${newUser.username}`);
         auditAction(req.user.username, action, resource, newUser.username);
 
-        if (req.body.sendMail && process.env.ENABLE_MAIL) {
+
+        if (req.body.sendMail && process.env.ENABLE_MAIL === "true") {
             sendMail('staffOnboarding', newUser.email, {
                 name: newUser.name,
                 user: newUser.username,
@@ -97,7 +98,7 @@ export async function updateUser (req,res) {
     const { username } = req.body;
     const action = 'UPDATE';
 
-    if (req.body.role == 'root' || req.body.username == 'root') {
+    if (req.body.role === 'root' || req.body.username === 'root') {
         return res.status(403).send({ message: `Root is reserved and cannot be taken or updated` });
     }
 
@@ -123,7 +124,7 @@ export async function updateUser (req,res) {
 export async function deleteUser (req,res) {
     const action = 'DELETE';
 
-    if (req.params.username == 'root') {
+    if (req.params.username === 'root') {
         return res.status(403).send({ message: `Root user is reserved and cannot be deleted` });
     }
     

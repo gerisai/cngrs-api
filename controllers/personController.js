@@ -33,8 +33,8 @@ export async function createPerson (req,res) {
         logger.info(`Created person ${personId} in DB with ID: ${newPerson.id}`);
         auditAction(req.user.username, action, resource, newPerson.personId);
 
-        if (process.env.ENABLE_QR) await createUploadQr('person',newPerson.personId);
-        if (process.env.ENABLE_MAIL) sendMail('personOnboarding', newPerson.email, {
+        if (process.env.ENABLE_QR === "true") await createUploadQr('person',newPerson.personId);
+        if (process.env.ENABLE_MAIL === "true") sendMail('personOnboarding', newPerson.email, {
             name: newPerson.name,
             qrUrl: `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${personId}/${personId}`
         });
@@ -135,7 +135,7 @@ export async function deletePerson (req,res) {
         logger.warn(`Deleted ${person.name} successfully`);
         auditAction(req.user.username, action, resource, person.personId);
         
-        if (process.env.ENABLE_QR) await deleteQr(personId);
+        if (process.env.ENABLE_QR === "true") await deleteQr(personId);
 
         return res.status(200).send({ message: `Person ${person.name} deleted successfully` });
     } catch (err) {

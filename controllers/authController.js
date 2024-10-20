@@ -81,7 +81,7 @@ export async function checkAuth (req,res, next) {
             req.user = user;
             next();
         } catch (err) {
-            if (err.name == 'TokenExpiredError') {
+            if (err.name === 'TokenExpiredError') {
                 logger.warn('User token is expired');
                 return res.status(401).send({ message: 'Unauthorized: Session has expired' });
             }
