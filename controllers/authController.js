@@ -2,7 +2,7 @@ import User from '../models/user.js';
 import jwt from 'jsonwebtoken';
 import { promisify } from 'util';
 import logger from '../util/logging.js';
-import roleMappings from '../util/roleMappings.js';
+import getRoleMappings from '../util/roleMappings.js';
 
 function signToken(user) {
     return jwt.sign({ user }, process.env.JWT_SECRET, {
@@ -105,9 +105,11 @@ export async function checkRole (req,res,next) {
     const { user, originalUrl, method } = req;
     logger.verbose(`Checking authorization level for ${user.username} with role ${user.role}`);
     let isAuthorized = false;
+    const roleMappings = getRoleMappings(user.username);
     const policies = roleMappings[user.role];
 
     for (const policy of policies) {
+        if (typeof policy)
         isAuthorized = policy.path.test(originalUrl) && policy.verbs.includes(method);
         if (isAuthorized) break;
     }
