@@ -153,7 +153,7 @@ export async function deleteUser (req,res) {
 
         logger.info(`Deleted user ${user.username} successfully`);
         auditAction(req.user.username, action, resource, user.username);
-        
+
         return res.status(200).send({ message: `User ${user.username} deleted successfully` });
     } catch (err) {
         logger.error(err);

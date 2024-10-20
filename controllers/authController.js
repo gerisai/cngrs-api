@@ -76,8 +76,14 @@ export async function checkAuth (req,res, next) {
 
         try {
             const { user } = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
-            logger.verbose('Decoded JWT successfully'); // TODO: Saving money by not verifying user existence in DB
-            logger.verbose(`User ${user.username} is authenticated`);
+            logger.verbose('Decoded JWT successfully');
+            const { username }  = user;
+            logger.verbose(`User ${username} is authenticated`);
+            const DbUser = await User.findOne({ username });
+            if (!DbUser) {
+                logger.verbose(`Unexistent user ${username}`);
+                throw new Error(`The user ${username} does not exist`);
+            }
             req.user = user;
             next();
         } catch (err) {
@@ -115,15 +121,32 @@ export async function checkRole (req,res,next) {
 }
 
 export async function getAuthUser (req,res) {
-    const { token } = req.cookies;
+    if (req.cookies.token) {
+        const { token } = req.cookies;
 
-    try {
-        const { user } = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
-        logger.verbose('Decoded JWT successfully'); // TODO: Saving money by not verifying user existence in DB
-        logger.verbose(`User ${user.username} is authenticated`);
-        return res.status(200).send({ user });
-    } catch (err) {
-        return res.status(403).send({ message: 'No auth user found'});
+        try {
+            const { user } = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+            logger.verbose('Decoded JWT successfully');
+            const { username }  = user;
+            logger.verbose(`User ${username} is authenticated`);
+            const DbUser = await User.findOne({ username });
+            if (!DbUser) {
+                logger.verbose(`Unexistent user ${username}`);
+                throw new Error(`The user ${username} does not exist`);
+            }
+            return res.status(200).send({ user });
+        } catch (err) {
+            if (err.name === 'TokenExpiredError') {
+                logger.warn('User token is expired');
+                return res.status(401).send({ message: 'Unauthorized: Session has expired' });
+            }
+            res.clearCookie('token');
+            logger.error(err);
+            return res.status(500).send({ message: `Authentication failure: ${err.message}` });
+        }
+    } else {
+        logger.warn('User is not authenticated');
+        return res.status(403).send({ message: 'Forbbiden: User has not logged in' });
     }
 }
 
