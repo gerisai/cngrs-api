@@ -10,7 +10,7 @@ function signToken(user) {
     });
 }
 
-function createToken (user, code, req, res) {
+export function createToken (user, req, res) {
     const token = signToken(user);
 
     logger.verbose(`Created user token for ${user.username}`);
@@ -23,16 +23,6 @@ function createToken (user, code, req, res) {
     });
 
     logger.verbose(`Set token cookie for ${user.username}`);
-
-    return res.status(code).send({
-        message: 'Successfully created user token',
-        user: {
-            username: user.username,
-            name: user.name,
-            role: user.role, // TODO: Be careful with how you store this
-            avatar: user.avatar
-        }
-    });
 }
 
 export async function login (req, res) {
@@ -55,12 +45,22 @@ export async function login (req, res) {
         const isMatch = await user.comparePassword(password);
         if (isMatch) {
             logger.info(`User ${username} logged in`);
-            return createToken({
+            createToken({
                 username: user.username,
                 name: user.name,
                 role: user.role,
                 avatar: user.avatar
-            }, 200, req, res);
+            }, req, res);
+
+            return res.status(200).send({
+                message: 'Successfully created user token',
+                user: {
+                    username: user.username,
+                    name: user.name,
+                    role: user.role, // TODO: Be careful with how you store this
+                    avatar: user.avatar
+                }
+            });
         }
         logger.warn(`Failed login attempt by user ${username}`);
         return res.status(401).send({ message: 'Incorrect username or password' });

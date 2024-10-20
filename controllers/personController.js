@@ -3,6 +3,7 @@ import logger from '../util/logging.js';
 import auditAction from '../util/audit.js';
 import { sendMail } from '../util/mailer.js';
 import { createUploadQr, deleteQr } from '../util/qr.js';
+import { s3BucketUrl } from '../util/constants.js';
 
 const resource = 'PERSON';
 
@@ -16,6 +17,10 @@ export async function createPerson (req,res) {
     const personId = createPersonId(req.body.name);
 
     try {
+        // QR generation
+        if (process.env.ENABLE_QR === "true") await createUploadQr('person', personId);
+
+        // Document generation
         const newPerson = await Person.create({
             personId: personId,
             name: req.body.name,
@@ -23,6 +28,7 @@ export async function createPerson (req,res) {
             registered: req.body.registered || false,
             gender: req.body.gender,
             cellphone: req.body.cellphone,
+            qrurl: `${s3BucketUrl}/person/${personId}/${personId}.jpeg`,
             illness: req.body.illness || null,
             tutor: req.body.tutor || null,
             zone: req.body.zone || null,
@@ -32,11 +38,10 @@ export async function createPerson (req,res) {
 
         logger.info(`Created person ${personId} in DB with ID: ${newPerson.id}`);
         auditAction(req.user.username, action, resource, newPerson.personId);
-
-        if (process.env.ENABLE_QR === "true") await createUploadQr('person',newPerson.personId);
+        
         if (process.env.ENABLE_MAIL === "true") sendMail('personOnboarding', newPerson.email, {
             name: newPerson.name,
-            qrUrl: `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${personId}/${personId}`
+            qrUrl: newPerson.qrurl
         });
 
         return res.status(200).send({
@@ -135,7 +140,7 @@ export async function deletePerson (req,res) {
         logger.warn(`Deleted ${person.name} successfully`);
         auditAction(req.user.username, action, resource, person.personId);
         
-        if (process.env.ENABLE_QR === "true") await deleteQr(personId);
+        await deleteQr(personId);
 
         return res.status(200).send({ message: `Person ${person.name} deleted successfully` });
     } catch (err) {

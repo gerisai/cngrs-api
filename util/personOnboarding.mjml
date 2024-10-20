@@ -44,7 +44,7 @@
           <mj-text color="#637381" font-size="16px">
             Te recordamos que para agilizar tu acceso, se utilizará un código QR.
           </mj-text>
-          <mj-image width="200px" src="${values.qrUrl}.png" />
+          <mj-image width="200px" src="${values.qrUrl}" />
           <mj-text color="#637381" font-size="16px" padding-bottom="30px">
             Te pedimos no compartirlo ya que esta asociado a tus datos y podría impactar negativamente en tu acceso.
           </mj-text>
