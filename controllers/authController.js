@@ -2,7 +2,7 @@ import User from '../models/user.js';
 import jwt from 'jsonwebtoken';
 import { promisify } from 'util';
 import logger from '../util/logging.js';
-import roleMappings from '../util/roleMappings.js';
+import getRoleMappings from '../util/roleMappings.js';
 
 function signToken(user) {
     return jwt.sign({ user }, process.env.JWT_SECRET, {
@@ -10,7 +10,7 @@ function signToken(user) {
     });
 }
 
-function createToken (user, code, req, res) {
+export function createToken (user, req, res) {
     const token = signToken(user);
 
     logger.verbose(`Created user token for ${user.username}`);
@@ -23,16 +23,6 @@ function createToken (user, code, req, res) {
     });
 
     logger.verbose(`Set token cookie for ${user.username}`);
-
-    return res.status(code).send({
-        message: 'Successfully created user token',
-        user: {
-            username: user.username,
-            name: user.name,
-            role: user.role, // TODO: Be careful with how you store this
-            avatar: user.avatar
-        }
-    });
 }
 
 export async function login (req, res) {
@@ -55,12 +45,22 @@ export async function login (req, res) {
         const isMatch = await user.comparePassword(password);
         if (isMatch) {
             logger.info(`User ${username} logged in`);
-            return createToken({
+            createToken({
                 username: user.username,
                 name: user.name,
                 role: user.role,
                 avatar: user.avatar
-            }, 200, req, res);
+            }, req, res);
+
+            return res.status(200).send({
+                message: 'Successfully created user token',
+                user: {
+                    username: user.username,
+                    name: user.name,
+                    role: user.role, // TODO: Be careful with how you store this
+                    avatar: user.avatar
+                }
+            });
         }
         logger.warn(`Failed login attempt by user ${username}`);
         return res.status(401).send({ message: 'Incorrect username or password' });
@@ -76,12 +76,18 @@ export async function checkAuth (req,res, next) {
 
         try {
             const { user } = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
-            logger.verbose('Decoded JWT successfully'); // TODO: Saving money by not verifying user existence in DB
-            logger.verbose(`User ${user.username} is authenticated`);
+            logger.verbose('Decoded JWT successfully');
+            const { username }  = user;
+            logger.verbose(`User ${username} is authenticated`);
+            const DbUser = await User.findOne({ username });
+            if (!DbUser) {
+                logger.verbose(`Unexistent user ${username}`);
+                throw new Error(`The user ${username} does not exist`);
+            }
             req.user = user;
             next();
         } catch (err) {
-            if (err.name == 'TokenExpiredError') {
+            if (err.name === 'TokenExpiredError') {
                 logger.warn('User token is expired');
                 return res.status(401).send({ message: 'Unauthorized: Session has expired' });
             }
@@ -99,9 +105,11 @@ export async function checkRole (req,res,next) {
     const { user, originalUrl, method } = req;
     logger.verbose(`Checking authorization level for ${user.username} with role ${user.role}`);
     let isAuthorized = false;
+    const roleMappings = getRoleMappings(user.username);
     const policies = roleMappings[user.role];
 
     for (const policy of policies) {
+        if (typeof policy)
         isAuthorized = policy.path.test(originalUrl) && policy.verbs.includes(method);
         if (isAuthorized) break;
     }
@@ -115,15 +123,32 @@ export async function checkRole (req,res,next) {
 }
 
 export async function getAuthUser (req,res) {
-    const { token } = req.cookies;
+    if (req.cookies.token) {
+        const { token } = req.cookies;
 
-    try {
-        const { user } = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
-        logger.verbose('Decoded JWT successfully'); // TODO: Saving money by not verifying user existence in DB
-        logger.verbose(`User ${user.username} is authenticated`);
-        return res.status(200).send({ user });
-    } catch (err) {
-        return res.status(403).send({ message: 'No auth user found'});
+        try {
+            const { user } = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+            logger.verbose('Decoded JWT successfully');
+            const { username }  = user;
+            logger.verbose(`User ${username} is authenticated`);
+            const DbUser = await User.findOne({ username });
+            if (!DbUser) {
+                logger.verbose(`Unexistent user ${username}`);
+                throw new Error(`The user ${username} does not exist`);
+            }
+            return res.status(200).send({ user });
+        } catch (err) {
+            if (err.name === 'TokenExpiredError') {
+                logger.warn('User token is expired');
+                return res.status(401).send({ message: 'Unauthorized: Session has expired' });
+            }
+            res.clearCookie('token');
+            logger.error(err);
+            return res.status(500).send({ message: `Authentication failure: ${err.message}` });
+        }
+    } else {
+        logger.warn('User is not authenticated');
+        return res.status(403).send({ message: 'Forbbiden: User has not logged in' });
     }
 }
 

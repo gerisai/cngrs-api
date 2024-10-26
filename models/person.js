@@ -56,6 +56,7 @@ const PersonSchema = new mongoose.Schema({
         type: Number,
         required: [true, "Number is required"]
     },
+    qrurl: String,
     illness: String,
     tutor: String,
     zone: String,

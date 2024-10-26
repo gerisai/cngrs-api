@@ -1,59 +1,57 @@
-import { createReadStream, unlink } from 'fs';
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { unlink } from 'fs';
 import QRCode from 'qrcode';
+import { uploadObjectFromFile, deleteObject } from './s3.js';
 import logger from '../util/logging.js';
+import { s3PersonKeyPrefix } from './constants.js';
 import { promisify } from 'util';
 
+const pathPrefix = process.env.UPLOAD_TEMP_FILE_DIR;
 const unLink = promisify(unlink);
+
 const qrOptions = {
   png: {
-    width: 300, // Force a width for better resolution
+    scale: 25,
     margin: 0
   },
   svg: {
     margin: 4 // Better for fullscreen
+  },
+  jpeg: {
+    scale: 25,
+    margin: 0
   }
 }
-const client = new S3Client({});
 
 export async function createUploadQr(resource, id) {
-  const files = ['png', 'svg'];
-  let filename, stream, command;
+  const extensions = ['jpeg', 'svg'];
+  let filename, filePath;
 
-  for (const file of files) {
-    filename = `${id}.${file}`
-    await QRCode.toFile(filename, `${process.env.CORS_ORIGIN}/${resource}/${id}`, qrOptions[file]);
-    logger.debug(`Created ${file.toUpperCase()} image for ${filename} locally`);
-    
-    stream = createReadStream(filename);
+  for (const ext of extensions) {
+    try {
+      filename = `${id}.${ext}`;
+      filePath = `${pathPrefix}/${filename}`;
+      QRCode.toFile(filePath, `${process.env.CORS_ORIGIN}/${resource}/${id}`, qrOptions[ext]);
+      logger.debug(`Created ${ext.toUpperCase()} image for ${filename} locally`);
 
-    command = new PutObjectCommand({
-      Bucket: process.env.S3_BUCKET_NAME,
-      Key: `${id}/${filename}`,
-      Body: stream,
-      ContentType: `image/${ file === 'png' ? 'png' : 'svg+xml'}`
-    });
-    await client.send(command);
-    logger.verbose(`Uploaded ${filename} to ${process.env.S3_BUCKET_NAME} S3 bucket`);
+      await uploadObjectFromFile(filePath, ext, `${s3PersonKeyPrefix}/${id}/${filename}`);
 
-    await unLink(filename);
-    logger.debug(`Removed local ${filename} successfully`);
+    } catch(err) {
+      throw new Error(err);
+    } finally {
+      await unLink(filePath);
+      logger.debug(`Removed local ${filename} successfully`);
+    }
   }
 
 }
 
 export async function deleteQr(id) {
-  const files = ['png', 'svg'];
-  let filename, command;
+  const extensions = ['jpeg', 'svg'];
+  let filename;
 
-  for (const file of files) {
-    filename = `${id}.${file}`
+  for (const ext of extensions) {
+    filename = `${id}.${ext}`
     
-    command = new DeleteObjectCommand({
-      Bucket: process.env.S3_BUCKET_NAME,
-      Key: `${id}/${filename}`
-    });
-    await client.send(command);
-    logger.verbose(`Deleted ${filename} successfully from ${process.env.S3_BUCKET_NAME} S3 bucket`);
+    await deleteObject(`${s3PersonKeyPrefix}/${id}/${filename}`);
   }
 }

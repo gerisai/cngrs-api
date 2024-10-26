@@ -1,15 +1,17 @@
 import User from '../models/user.js';
+import { createToken } from './authController.js';
 import logger from '../util/logging.js';
 import auditAction from '../util/audit.js';
 import { sendMail } from '../util/mailer.js';
-import { uploadImage, deleteImage } from '../util/avatar.js';
+import { s3BucketUrl, s3UserKeyPrefix } from '../util/constants.js';
+import { uploadObjectFromFile, deleteObject } from '../util/s3.js';
 
 const resource = 'USER';
 
 export async function createUser (req, res) {
     const action = 'CREATE';
 
-    if (req.body.role == 'root') {
+    if (req.body.role === 'root') {
         return res.status(403).send({ message: `Root role is reserved and cannot be taken` });
     }
     
@@ -20,12 +22,13 @@ export async function createUser (req, res) {
             password: req.body.password,
             email: req.body.email,
             role: req.body.role,
-            avatar: `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/staff/${req.body.username}/avatar`
+            avatar: null
         });
         logger.info(`Created new user ${newUser.username}`);
         auditAction(req.user.username, action, resource, newUser.username);
 
-        if (req.body.sendMail && process.env.ENABLE_MAIL) {
+
+        if (req.body.sendMail && process.env.ENABLE_MAIL === "true") {
             sendMail('staffOnboarding', newUser.email, {
                 name: newUser.name,
                 user: newUser.username,
@@ -77,7 +80,8 @@ export async function readUsers (req, res) {
         const users = await User.find().select({
             username: 1,
             name: 1,
-            role: 1
+            role: 1,
+            avatar: 1
         });
 
         const filteredUsers = users.filter((user) => user.username != 'root'); // Root user shall never be returned
@@ -97,7 +101,7 @@ export async function updateUser (req,res) {
     const { username } = req.body;
     const action = 'UPDATE';
 
-    if (req.body.role == 'root' || req.body.username == 'root') {
+    if (req.body.role === 'root' || req.body.username === 'root') {
         return res.status(403).send({ message: `Root is reserved and cannot be taken or updated` });
     }
 
@@ -113,6 +117,15 @@ export async function updateUser (req,res) {
         logger.info(`Updated user ${userUpdated.username} successfully`);
         auditAction(req.user.username, action, resource, userUpdated.username);
         
+        if (req.user.username === username) { // Updating current logged in user
+            createToken({
+                username: userUpdated.username,
+                name: userUpdated.name,
+                role: userUpdated.role,
+                avatar: userUpdated.avatar
+            }, req, res);
+        }
+        
         return res.status(200).send({ message: `User ${userUpdated.username} updated` });
     } catch(err) {
         logger.error(err);
@@ -123,20 +136,24 @@ export async function updateUser (req,res) {
 export async function deleteUser (req,res) {
     const action = 'DELETE';
 
-    if (req.params.username == 'root') {
+    if (req.params.username === 'root') {
         return res.status(403).send({ message: `Root user is reserved and cannot be deleted` });
     }
     
     try {
         const user = await User.findOneAndDelete({ username: req.params.username});
-        if (user.avatar) await deleteImage(req.params.username);
         if (!user) {
             logger.verbose(`Unexistent user ${req.params.username} cannot be deleted`);
             return res.status(404).send({ message: 'Unexistent user' });
         }
+        if (user.avatar) {
+            const avatarKey = `${s3UserKeyPrefix}/${req.params.username}/avatar`;
+            await deleteObject(avatarKey);
+        }
+
         logger.info(`Deleted user ${user.username} successfully`);
         auditAction(req.user.username, action, resource, user.username);
-        
+
         return res.status(200).send({ message: `User ${user.username} deleted successfully` });
     } catch (err) {
         logger.error(err);
@@ -152,8 +169,28 @@ export async function uploadAvatar (req,res) {
     logger.verbose(`Received avatar upload for ${username}`);
     const extension = fileType.split('/')[1];
     try {
-        await uploadImage(filePath, extension, username);
+        const user = await User.findOne({ username });
+        if (!user) {
+            logger.verbose(`Unexistent user ${username} cannot be updated`);
+            return res.status(404).send({ message: `The user ${username} does not exist` });
+        }
+
+        const avatarKey = `${s3UserKeyPrefix}/${req.params.username}/avatar`;
+
+        await uploadObjectFromFile(filePath, extension, avatarKey);
+
+        user.avatar = `${s3BucketUrl}/${avatarKey}`;
+        const userUpdated = await user.save();
+        logger.info(`Updated user ${userUpdated.username} successfully`);
+
         auditAction(req.user.username, action, resource, username);
+
+        createToken({
+            username: userUpdated.username,
+            name: userUpdated.name,
+            role: userUpdated.role,
+            avatar: userUpdated.avatar
+        }, req, res);
 
         return res.status(200).send({ message: 'Avatar uploaded correctly' });
     } catch (err) {
