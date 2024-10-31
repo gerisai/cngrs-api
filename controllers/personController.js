@@ -39,10 +39,14 @@ export async function createPerson (req,res) {
         logger.info(`Created person ${personId} in DB with ID: ${newPerson.id}`);
         auditAction(req.user.username, action, resource, newPerson.personId);
         
-        if (process.env.ENABLE_MAIL === "true") sendMail('personOnboarding', newPerson.email, {
-            name: newPerson.name,
-            qrUrl: newPerson.qrurl
-        });
+        if (process.env.ENABLE_MAIL === "true") {
+            sendMail('personOnboarding', newPerson.email, {
+                name: newPerson.name,
+                qrUrl: newPerson.qrurl
+            });
+            const personUpdated = await Person.findOneAndUpdate({ personId }, { sentMail: true })
+            logger.info(`Updated person ${personUpdated.name}`);
+        }
 
         return res.status(200).send({
             name: newPerson.name,
