@@ -49,7 +49,14 @@ const UserSchema = new mongoose.Schema({
         },
         default: 'operator'
     },
-    avatar: String
+    avatar: {
+        type: String,
+        default: null
+    },
+    mailSent: {
+        type: Boolean,
+        default: false
+    }
 });
 
 UserSchema.pre('save', function(next) {

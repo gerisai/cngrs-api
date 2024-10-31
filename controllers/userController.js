@@ -21,8 +21,7 @@ export async function createUser (req, res) {
             name: req.body.name,
             password: req.body.password,
             email: req.body.email,
-            role: req.body.role,
-            avatar: null
+            role: req.body.role
         });
         logger.info(`Created new user ${newUser.username}`);
         auditAction(req.user.username, action, resource, newUser.username);
@@ -35,6 +34,8 @@ export async function createUser (req, res) {
                 password: req.body.password,
                 logInUrl: `${process.env.CORS_ORIGIN}/login`
             });
+            const userUpdated = await User.findOneAndUpdate({ username: newUser.username }, { sentMail: true })
+            logger.info(`User ${userUpdated.name} updated`);
         }
         
         return res.status(200).send({ message: `User ${newUser.username} created successfully` });

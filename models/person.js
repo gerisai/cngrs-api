@@ -56,6 +56,10 @@ const PersonSchema = new mongoose.Schema({
         type: Number,
         required: [true, "Number is required"]
     },
+    mailSent: {
+        type: Boolean,
+        default: false
+    },
     qrurl: String,
     illness: String,
     tutor: String,
