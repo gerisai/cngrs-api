@@ -72,9 +72,13 @@ export async function readPerson (req,res) {
                 personId: person.personId,
                 name: person.name,
                 email: person.email,
+                gender: person.gender,
+                cellphone: person.cellphone,
                 registered: person.registered,
                 zone: person.zone,
                 branch: person.branch,
+                illness: person.illness,
+                tutor: person.tutor,
                 room: person.room,
                 accessed: person.accessed
             },
