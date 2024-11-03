@@ -27,7 +27,7 @@ export async function createUser (req, res) {
         auditAction(req.user.username, action, resource, newUser.username);
 
 
-        if (req.body.sendMail && process.env.ENABLE_MAIL === "true") {
+        if (req.body.sendMail && process.env.ENABLE_USER_MAIL === "true") {
             sendMail('staffOnboarding', newUser.email, {
                 name: newUser.name,
                 user: newUser.username,

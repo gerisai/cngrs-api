@@ -8,7 +8,7 @@ terraform {
     }
 
     mongodbatlas = {
-      source = "mongodb/mongodbatlas"
+      source  = "mongodb/mongodbatlas"
       version = "1.17.6"
     }
   }
@@ -21,7 +21,7 @@ terraform {
 }
 
 provider "aws" {
-  region = "us-west-2"
+  region  = "us-west-2"
   profile = "jidi"
 }
 

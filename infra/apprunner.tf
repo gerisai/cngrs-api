@@ -11,7 +11,7 @@ resource "aws_apprunner_auto_scaling_configuration_version" "cngrs_api" {
 }
 
 resource "aws_apprunner_service" "cngrs_api" {
-  service_name = local.app_name
+  service_name                   = local.app_name
   auto_scaling_configuration_arn = aws_apprunner_auto_scaling_configuration_version.cngrs_api.arn
 
   source_configuration {
@@ -19,14 +19,14 @@ resource "aws_apprunner_service" "cngrs_api" {
       image_configuration {
         port = var.cngrs_api_env_vars.SERVER_PORT
         runtime_environment_secrets = {
-          DB_STRING = aws_secretsmanager_secret.db_string.arn
+          DB_STRING  = aws_secretsmanager_secret.db_string.arn
           JWT_SECRET = aws_secretsmanager_secret.jwt_secret.arn
         }
 
         runtime_environment_variables = merge({
-          AWS_REGION = var.aws_region
+          AWS_REGION     = var.aws_region
           S3_BUCKET_NAME = var.cngrs_bucket_name
-        },var.cngrs_api_env_vars)
+        }, var.cngrs_api_env_vars)
       }
       image_identifier      = var.cngr_api_image
       image_repository_type = "ECR"
@@ -39,11 +39,11 @@ resource "aws_apprunner_service" "cngrs_api" {
   }
 
   instance_configuration {
-    cpu = var.cngrs_api_cpu
-    memory = var.cngrs_api_memory
+    cpu               = var.cngrs_api_cpu
+    memory            = var.cngrs_api_memory
     instance_role_arn = aws_iam_role.cngrs_api_instance_role.arn
   }
-  
+
   network_configuration {
     ingress_configuration {
       is_publicly_accessible = true
