@@ -6,7 +6,7 @@ resource "mongodbatlas_project" "cngrs" {
   org_id = data.mongodbatlas_roles_org_id.terraform.org_id
 
   limits {
-    name = "atlas.project.deployment.clusters"
+    name  = "atlas.project.deployment.clusters"
     value = 2
   }
 
@@ -19,11 +19,11 @@ resource "mongodbatlas_project" "cngrs" {
 }
 
 resource "mongodbatlas_serverless_instance" "cngrs" {
-  project_id   = mongodbatlas_project.cngrs.id
-  name         = local.project_name
+  project_id = mongodbatlas_project.cngrs.id
+  name       = local.project_name
 
   provider_settings_backing_provider_name = "AWS"
-  provider_settings_provider_name = "SERVERLESS"
-  provider_settings_region_name = replace(upper(var.aws_region),"-","_")
+  provider_settings_provider_name         = "SERVERLESS"
+  provider_settings_region_name           = replace(upper(var.aws_region), "-", "_")
 }
 

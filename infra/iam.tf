@@ -54,7 +54,7 @@ resource "aws_iam_policy" "cngrs_api_access_policy" {
 resource "aws_iam_role" "cngrs_api_access_role" {
   name = "cngrs_api_access_role"
 
-  assume_role_policy = data.aws_iam_policy_document.cngrs_api_access_trust_policy.json
+  assume_role_policy  = data.aws_iam_policy_document.cngrs_api_access_trust_policy.json
   managed_policy_arns = [aws_iam_policy.cngrs_api_access_policy.arn]
 
   tags = local.tags
@@ -101,7 +101,7 @@ resource "aws_iam_policy" "cngrs_api_instance_policy" {
         Action = [
           "secretsmanager:GetSecretValue",
         ]
-        Effect   = "Allow"
+        Effect = "Allow"
         Resource = [
           aws_secretsmanager_secret.db_string.arn,
           aws_secretsmanager_secret.jwt_secret.arn
@@ -114,7 +114,7 @@ resource "aws_iam_policy" "cngrs_api_instance_policy" {
 resource "aws_iam_role" "cngrs_api_instance_role" {
   name = "cngrs_api_instance_role"
 
-  assume_role_policy = data.aws_iam_policy_document.cngrs_api_instance_trust_policy.json
+  assume_role_policy  = data.aws_iam_policy_document.cngrs_api_instance_trust_policy.json
   managed_policy_arns = [aws_iam_policy.cngrs_api_instance_policy.arn]
 
   tags = local.tags
@@ -140,11 +140,11 @@ resource "aws_iam_policy" "gh_actions_runners_policy" {
         Resource = "${aws_ecr_repository.cngrs.arn}"
       },
       {
-        Action = "ecr:GetAuthorizationToken"
+        Action   = "ecr:GetAuthorizationToken"
         Effect   = "Allow"
         Resource = "*"
       },
-            {
+      {
         Action = [
           "apprunner:ListServices",
           "apprunner:PauseService",
