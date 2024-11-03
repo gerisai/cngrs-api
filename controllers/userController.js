@@ -5,6 +5,8 @@ import auditAction from '../util/audit.js';
 import { sendMail } from '../util/mailer.js';
 import { s3BucketUrl, s3UserKeyPrefix } from '../util/constants.js';
 import { uploadObjectFromFile, deleteObject } from '../util/s3.js';
+import { parseCsv } from '../util/csv.js';
+import { createUsername, createRandomPassword } from '../util/utilities.js';
 
 const resource = 'USER';
 
@@ -46,6 +48,42 @@ export async function createUser (req, res) {
         }
         logger.error(err);
         return res.status(400).send({ message: err.message });
+    }
+}
+
+export async function bulkCreateUser (req,res) {
+    const action = 'UPDATE BULK';
+    try {
+        const { tempFilePath: filePath, mimetype: fileType } = req.files.userlist;
+        const userList = await parseCsv(filePath, 'user');
+        
+        userList.map(u => {
+            u['username'] = createUsername(u.name);
+            u['role'] = 'operator';
+            u['password'] = createRandomPassword(8);
+        })
+    
+        const users = await User.insertMany(userList);
+        logger.info(`Created ${users.length} users in DB from list successfully`);
+
+        if (req.body.sendMail && process.env.ENABLE_MAIL === "true") {
+            for (const u of userList) {
+                sendMail('staffOnboarding', u.email, {
+                    name: u.name,
+                    user: u.username,
+                    password: u.password,
+                    logInUrl: `${process.env.CORS_ORIGIN}/login`
+                });
+                const userUpdated = await User.findOneAndUpdate({ username: u.username }, { sentMail: true })
+                logger.info(`User ${userUpdated.name} updated`);
+            }
+        }
+        
+        auditAction(req.user.username, action, resource);
+        return res.status(200).send({ message: `${users.length} users were created successfully` });
+    } catch (err) {
+        logger.error(err);
+        return res.status(500).send({ message: err.message });
     }
 }
 
@@ -166,10 +204,11 @@ export async function uploadAvatar (req,res) {
     const action = 'UPDATE';
     
     const { username } = req.params;
-    const { tempFilePath: filePath, mimetype: fileType } = req.files.avatar;
-    logger.verbose(`Received avatar upload for ${username}`);
-    const extension = fileType.split('/')[1];
+
     try {
+        const { tempFilePath: filePath, mimetype: fileType } = req.files.avatar;
+        logger.verbose(`Received avatar upload for ${username}`);
+        const extension = fileType.split('/')[1];
         const user = await User.findOne({ username });
         if (!user) {
             logger.verbose(`Unexistent user ${username} cannot be updated`);
