@@ -13,7 +13,8 @@ cngrs_api_env_vars = {
   LOG_LEVEL = "debug"
   AUDIT = true
   JWT_EXPIRES_IN = "1d"
-  ENABLE_MAIL = true
+  ENABLE_USER_MAIL = true
+  ENABLE_PERSON_MAIL = false
   ENABLE_QR = true
   UPLOAD_TEMP_FILE_DIR = "/tmp"
 }

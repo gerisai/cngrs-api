@@ -39,7 +39,7 @@ export async function createPerson (req,res) {
         logger.info(`Created person ${personId} in DB with ID: ${newPerson.id}`);
         auditAction(req.user.username, action, resource, newPerson.personId);
         
-        if (process.env.ENABLE_MAIL === "true") {
+        if (process.env.ENABLE_PERSON_MAIL === "true") {
             sendMail('personOnboarding', newPerson.email, {
                 name: newPerson.name,
                 qrUrl: newPerson.qrurl

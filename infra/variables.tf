@@ -42,7 +42,8 @@ variable "cngrs_api_env_vars" {
     LOG_LEVEL = string
     AUDIT = bool
     JWT_EXPIRES_IN = string
-    ENABLE_MAIL = bool
+    ENABLE_USER_MAIL = bool
+    ENABLE_PERSON_MAIL = bool
     ENABLE_QR = bool
     UPLOAD_TEMP_FILE_DIR = string
   })
