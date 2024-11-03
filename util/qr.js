@@ -30,7 +30,13 @@ export async function createUploadQr(resource, id) {
     try {
       filename = `${id}.${ext}`;
       filePath = `${pathPrefix}/${filename}`;
-      QRCode.toFile(filePath, `${process.env.CORS_ORIGIN}/${resource}/${id}`, qrOptions[ext]);
+      await new Promise(function (resolve, reject) {
+        QRCode.toFile(filePath, `${process.env.CORS_ORIGIN}/${resource}/${id}`, qrOptions[ext], function (err) {
+          if (err) reject(err);
+          resolve('QR created');
+        });
+      });
+
       logger.debug(`Created ${ext.toUpperCase()} image for ${filename} locally`);
 
       await uploadObjectFromFile(filePath, ext, `${s3PersonKeyPrefix}/${id}/${filename}`);
