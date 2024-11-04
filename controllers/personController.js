@@ -98,7 +98,7 @@ export async function readPeople (req, res) {
             email: 1,
             zone: 1,
             branch: 1,
-            registered: 1
+            accessed: 1
         });
 
         logger.info(`Read all people successfully`);
