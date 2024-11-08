@@ -68,7 +68,7 @@ export async function bulkCreateUser (req,res) {
         const users = await User.insertMany(userList);
         logger.info(`Created ${users.length} users in DB from list successfully`);
 
-        if (req.body.sendMail && process.env.ENABLE_MAIL === "true") {
+        if (req.query.sendMail === "true" && process.env.ENABLE_MAIL === "true") {
             for (const u of userList) {
                 await sleep(100); // throtle to max 10 mails per second for SES quota (14/s)
                 sendMail('staffOnboarding', u.email, {
