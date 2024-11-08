@@ -35,11 +35,6 @@ const PersonSchema = new mongoose.Schema({
             message: (props) => `${props.value} is not a valid email`
         }
     },
-    registered: {
-        type: Boolean,
-        required: [true, 'Register status is required'],
-        default: false
-    },
     accessed: {
         type: Boolean,
         default: false
