@@ -6,7 +6,7 @@ import { sendMail } from '../util/mailer.js';
 import { s3BucketUrl, s3UserKeyPrefix } from '../util/constants.js';
 import { uploadObjectFromFile, deleteObject } from '../util/s3.js';
 import { parseCsv } from '../util/csv.js';
-import { createUsername, createRandomPassword } from '../util/utilities.js';
+import { createUsername, createRandomPassword, sleep } from '../util/utilities.js';
 
 const resource = 'USER';
 
@@ -54,20 +54,23 @@ export async function createUser (req, res) {
 export async function bulkCreateUser (req,res) {
     const action = 'UPDATE BULK';
     try {
-        const { tempFilePath: filePath, mimetype: fileType } = req.files.userlist;
+        const { tempFilePath: filePath, mimetype: fileType } = req.files.csv;
+        const extension = fileType.split('/')[1];
+        if (!extension === 'csv') throw new Error('Only CSV files are supported');
         const userList = await parseCsv(filePath, 'user');
-        
+
         userList.map(u => {
             u['username'] = createUsername(u.name);
             u['role'] = 'operator';
             u['password'] = createRandomPassword(8);
-        })
+        });
     
         const users = await User.insertMany(userList);
         logger.info(`Created ${users.length} users in DB from list successfully`);
 
         if (req.body.sendMail && process.env.ENABLE_MAIL === "true") {
             for (const u of userList) {
+                await sleep(100); // throtle to max 10 mails per second for SES quota (14/s)
                 sendMail('staffOnboarding', u.email, {
                     name: u.name,
                     user: u.username,

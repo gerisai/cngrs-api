@@ -18,29 +18,27 @@ function arraysEqual(a, b) {
   }
 
 function validateHeaders(headers,type) {
-    if (arraysEqual(headers, validFields[type])) return
-    throw new Error(`Expected headers like ${validFields[type]} but ${headers} was provided`);
+    if (arraysEqual(headers, validFields[type])) return true
+    return false
 }
 
 function validateField(field,type) {
-    if (arraysEqual(Object.keys(field), validFields[type])) return
-    throw new Error(`Expected record like ${validFields[type]} but ${Object.values(field)} was provided`);
+    if (arraysEqual(Object.keys(field), validFields[type])) return true
+    return false
 }
 
 export function parseCsv(filePath, type) {
-    if (!filePath.endsWith('.csv')) throw new Error('Only CSV files are supported');
     const records = [];
-    
     return new Promise (function (resolve,reject) {
-        fs.createReadStream(filePath).pipe(csv())
-        .on('headers', (headers) => {
-            validateHeaders(headers,type);
-        })
-        .on('error', error => reject(error))
-        .on('data', (data) => {
-            validateField(data,type);
-            records.push(data);
-        })
-        .on('end', () => resolve(records) )
+            fs.createReadStream(filePath).pipe(csv())
+            .on('headers', (headers) => {
+                if (!validateHeaders(headers,type)) reject(new Error(`Expected headers like ${validFields[type]} but ${headers} was provided`))
+            })
+            .on('error', error => reject(error))
+            .on('data', (data) => {
+                if (!validateField(data,type)) reject(new Error(`Expected record like ${validFields[type]} but ${Object.values(data)} was provided`));
+                records.push(data);
+            })
+            .on('end', () => resolve(records) )
     });
 }
