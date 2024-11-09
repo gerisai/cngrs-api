@@ -4,6 +4,7 @@ import auditAction from '../util/audit.js';
 import { sendMail } from '../util/mailer.js';
 import { createUploadQr, deleteQr } from '../util/qr.js';
 import { s3BucketUrl } from '../util/constants.js';
+import { parseCsv } from '../util/csv.js';
 import { createPersonId, normalizeName, sleep } from '../util/utilities.js';
 
 const resource = 'PERSON';
@@ -67,12 +68,16 @@ export async function bulkCreatePerson (req,res) {
             const personId = createPersonId(u.name);
             u['personId'] = personId;
             if (process.env.ENABLE_QR === "true") {
+                try {
                 await createUploadQr('person', personId);
                 u['qrurl'] = `${s3BucketUrl}/person/${personId}/${personId}.jpeg`;
+                } catch(err) {
+                    throw new Error(err)
+                }
             }
         });
     
-        const people = await Person.insertMany(userList);
+        const people = await Person.insertMany(peopleList);
         logger.info(`Created ${people.length} asistants in DB from list successfully`);
 
         if (req.query.sendMail === "true" && process.env.ENABLE_MAIL === "true") {
