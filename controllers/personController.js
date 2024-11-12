@@ -67,15 +67,14 @@ export async function bulkCreatePerson (req,res) {
         peopleList.map(async u => {
             const personId = createPersonId(u.name);
             u['personId'] = personId;
-            if (process.env.ENABLE_QR === "true") {
-                try {
-                await createUploadQr('person', personId);
-                u['qrurl'] = `${s3BucketUrl}/person/${personId}/${personId}.jpeg`;
-                } catch(err) {
-                    throw new Error(err)
-                }
-            }
+            u['qrurl'] = `${s3BucketUrl}/person/${personId}/${personId}.jpeg`;
         });
+
+        if (process.env.ENABLE_QR === "true") {
+            for (const p of peopleList) { // DO NOT USE IT INSIDE MAP FUNCTION OR ERROR BREAK THE APP
+                await createUploadQr('person', p.personId);
+            }
+        }
     
         const people = await Person.insertMany(peopleList);
         logger.info(`Created ${people.length} asistants in DB from list successfully`);
