@@ -55,9 +55,13 @@ export async function deleteQr(id) {
   const extensions = ['jpeg', 'svg'];
   let filename;
 
-  for (const ext of extensions) {
-    filename = `${id}.${ext}`
-    
-    await deleteObject(`${s3PersonKeyPrefix}/${id}/${filename}`);
+  try {
+    for (const ext of extensions) {
+      filename = `${id}.${ext}`
+      
+      await deleteObject(`${s3PersonKeyPrefix}/${id}/${filename}`);
+    }
+  } catch(err) {
+    throw new Error(err);
   }
 }

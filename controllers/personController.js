@@ -4,12 +4,10 @@ import auditAction from '../util/audit.js';
 import { sendMail } from '../util/mailer.js';
 import { createUploadQr, deleteQr } from '../util/qr.js';
 import { s3BucketUrl } from '../util/constants.js';
+import { parseCsv } from '../util/csv.js';
+import { createPersonId, normalizeName, sleep } from '../util/utilities.js';
 
 const resource = 'PERSON';
-
-function createPersonId(name) {
-    return name.normalize("NFD").replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\ /g,'');
-}
 
 export async function createPerson (req,res) {
     const action = 'CREATE';
@@ -23,7 +21,7 @@ export async function createPerson (req,res) {
         // Document generation
         const newPerson = await Person.create({
             personId: personId,
-            name: req.body.name,
+            name: normalizeName(req.body.name),
             email: req.body.email,
             registered: req.body.registered || false,
             gender: req.body.gender,
@@ -54,6 +52,49 @@ export async function createPerson (req,res) {
         });
     } catch (err) {
         if (err.code === 11000) err.message = `Name ${req.body.name} already exist`;
+        return res.status(500).send({ message: err.message });
+    }
+}
+
+export async function bulkCreatePerson (req,res) {
+    const action = 'UPDATE BULK';
+    try {
+        const { tempFilePath: filePath, mimetype: fileType } = req.files.csv;
+        const extension = fileType.split('/')[1];
+        if (!extension === 'csv') throw new Error('Only CSV files are supported');
+        const peopleList = await parseCsv(filePath, 'person');
+
+        peopleList.map(async u => {
+            const personId = createPersonId(u.name);
+            u['personId'] = personId;
+            u['qrurl'] = `${s3BucketUrl}/person/${personId}/${personId}.jpeg`;
+        });
+
+        if (process.env.ENABLE_QR === "true") {
+            for (const p of peopleList) { // DO NOT USE IT INSIDE MAP FUNCTION OR ERROR BREAK THE APP
+                await createUploadQr('person', p.personId);
+            }
+        }
+    
+        const people = await Person.insertMany(peopleList);
+        logger.info(`Created ${people.length} asistants in DB from list successfully`);
+
+        if (req.query.sendMail === "true" && process.env.ENABLE_MAIL === "true") {
+            for (const p of peopleList) {
+                await sleep(100); // throtle to max 10 mails per second for SES quota (14/s)
+                sendMail('personOnboarding', p.email, {
+                    name: p.name,
+                    qrUrl: p.qrurl
+                });
+                const personUpdated = await User.findOneAndUpdate({ personId: p.personId }, { sentMail: true })
+                logger.info(`Person ${personUpdated.name} updated`);
+            }
+        }
+        
+        auditAction(req.user.username, action, resource);
+        return res.status(200).send({ message: `${people.length} asistants were created successfully` });
+    } catch (err) {
+        logger.error(err);
         return res.status(500).send({ message: err.message });
     }
 }
