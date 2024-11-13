@@ -6,7 +6,7 @@ import { sendMail } from '../util/mailer.js';
 import { s3BucketUrl, s3UserKeyPrefix } from '../util/constants.js';
 import { uploadObjectFromFile, deleteObject } from '../util/s3.js';
 import { parseCsv } from '../util/csv.js';
-import { createUsername, createRandomPassword, sleep } from '../util/utilities.js';
+import { createUsername, createRandomPassword, sleep, normalizeName } from '../util/utilities.js';
 
 const resource = 'USER';
 
@@ -20,7 +20,7 @@ export async function createUser (req, res) {
     try {
         const newUser = await User.create({
             username: req.body.username,
-            name: req.body.name,
+            name: normalizeName(req.body.name),
             password: req.body.password,
             email: req.body.email,
             role: req.body.role
@@ -61,6 +61,7 @@ export async function bulkCreateUser (req,res) {
 
         userList.map(u => {
             u['username'] = createUsername(u.name);
+            u['name'] = normalizeName(u.name);
             u['role'] = 'operator';
             u['password'] = createRandomPassword(8);
         });
@@ -154,6 +155,7 @@ export async function updateUser (req,res) {
             return res.status(404).send({ message: `The user ${username} does not exist` });
         }
         delete req.body.username; // username cannot be overwritten
+        if (req.body.name) req.body.name = normalizeName(req.body.name);
         Object.assign(user,req.body); // assign updated properties
         const userUpdated = await user.save(); // must be called for the paswword to be hashed
         logger.info(`Updated user ${userUpdated.username} successfully`);

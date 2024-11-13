@@ -21,7 +21,7 @@ const UserSchema = new mongoose.Schema({
         uppercase: true,
         validate: {
             validator: function(v) {
-                return /^[a-zA-Z\ ]+$/.test(v);
+                return /^[a-zA-ZÀ-ž\ ]+$/.test(v);
             },
             message: () => 'Username can only contain letters and spaces'
         }

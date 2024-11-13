@@ -64,8 +64,9 @@ export async function bulkCreatePerson (req,res) {
         if (!extension === 'csv') throw new Error('Only CSV files are supported');
         const peopleList = await parseCsv(filePath, 'person');
 
-        peopleList.map(async u => {
+        peopleList.map(u => {
             const personId = createPersonId(u.name);
+            u['name'] = normalizeName(u.name);
             u['personId'] = personId;
             u['qrurl'] = `${s3BucketUrl}/person/${personId}/${personId}.jpeg`;
         });
@@ -161,7 +162,7 @@ export async function updatePerson (req,res) {
     try {
         const person = await Person.findOne({ personId });
         if (!person) return res.status(404).send({ message: `The person ${personId} does not exist` });
-        delete req.body.name; // username cannot be overwritten
+        if (req.body.name) req.body.name = normalizeName(req.body.name);
         delete req.body.personId // personId cannot be changed
         Object.assign(person,req.body); // assign updated properties
         const personUpdated = await person.save(); // No password but keeping consistency
