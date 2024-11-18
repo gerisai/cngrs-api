@@ -4,7 +4,6 @@ const SessionSchema = new mongoose.Schema({
     username: {
         type: String,
         required: [true, 'Username is required'],
-        unique: true,
         validate: {
             validator: function(v) {
                 return /^[a-z]+$/.test(v);
