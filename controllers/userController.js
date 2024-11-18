@@ -1,5 +1,5 @@
 import User from '../models/user.js';
-import { createToken } from './authController.js';
+import Session from '../models/session.js';
 import logger from '../util/logging.js';
 import auditAction from '../util/audit.js';
 import { sendMail } from '../util/mailer.js';
@@ -161,15 +161,6 @@ export async function updateUser (req,res) {
         logger.info(`Updated user ${userUpdated.username} successfully`);
         auditAction(req.user.username, action, resource, userUpdated.username);
         
-        if (req.user.username === username) { // Updating current logged in user
-            createToken({
-                username: userUpdated.username,
-                name: userUpdated.name,
-                role: userUpdated.role,
-                avatar: userUpdated.avatar
-            }, req, res);
-        }
-        
         return res.status(200).send({ message: `User ${userUpdated.username} updated` });
     } catch(err) {
         logger.error(err);
@@ -194,6 +185,10 @@ export async function deleteUser (req,res) {
             const avatarKey = `${s3UserKeyPrefix}/${req.params.username}/avatar`;
             await deleteObject(avatarKey);
         }
+
+        // Delete all user's sessions
+        await Session.deleteMany({ username: user.username });
+        logger.verbose(`Deleted user sessions for ${user.username}`);
 
         logger.info(`Deleted user ${user.username} successfully`);
         auditAction(req.user.username, action, resource, user.username);
@@ -229,13 +224,6 @@ export async function uploadAvatar (req,res) {
         logger.info(`Updated user ${userUpdated.username} successfully`);
 
         auditAction(req.user.username, action, resource, username);
-
-        createToken({
-            username: userUpdated.username,
-            name: userUpdated.name,
-            role: userUpdated.role,
-            avatar: userUpdated.avatar
-        }, req, res);
 
         return res.status(200).send({ message: 'Avatar uploaded correctly' });
     } catch (err) {

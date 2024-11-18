@@ -1,28 +1,41 @@
 import User from '../models/user.js';
+import Session from '../models/session.js';
+import UserSession from '../models/usersession.js';
 import jwt from 'jsonwebtoken';
 import { promisify } from 'util';
 import logger from '../util/logging.js';
 import getRoleMappings from '../util/roleMappings.js';
 
-function signToken(user) {
-    return jwt.sign({ user }, process.env.JWT_SECRET, {
+function signToken(id) {
+    return jwt.sign({ id }, process.env.JWT_SECRET, {
         expiresIn: process.env.JWT_EXPIRES_IN
     });
 }
 
-export function createToken (user, req, res) {
-    const token = signToken(user);
-
+function createToken (user) {
+    const token = signToken(user._id);
     logger.verbose(`Created user token for ${user.username}`);
+    return token;
+}
 
-    // configure cookie in response
-    res.cookie('token', token, {
-        httpOnly: true,
-        secure: req.secure || req.headers['x-forwarded-proto'] === 'https',
-        sameSite: process.env.NODE_ENV !== 'production' ? 'Lax' : 'None'
-    });
-
-    logger.verbose(`Set token cookie for ${user.username}`);
+async function decodeToken (token) {
+    try {
+        const user = await UserSession.findOne({ token });
+        await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+        logger.verbose('Decoded JWT successfully');
+        if (!user) {
+            logger.verbose('Unexistent JWT');
+            throw new Error(`The auth token is not valid`); // DO NOT INCLUDE username for security reasons
+        }
+        logger.verbose(`User ${user.username} is authenticated`);
+        return user;
+    } catch(err) {
+        if (err.name === 'TokenExpiredError') {
+            logger.warn('User token is expired. Deleting it.');
+            await Session.findOneAndDelete({ token });
+        }
+        throw new Error(err);
+    }
 }
 
 export async function login (req, res) {
@@ -44,22 +57,26 @@ export async function login (req, res) {
     try {
         const isMatch = await user.comparePassword(password);
         if (isMatch) {
+
             logger.info(`User ${username} logged in`);
-            createToken({
-                username: user.username,
-                name: user.name,
-                role: user.role,
-                avatar: user.avatar
-            }, req, res);
+
+            const token = createToken(user);
+
+            const session = await Session.create({
+                username,
+                token
+            });
+            logger.info(`Added JWT token for ${session.username}`);
 
             return res.status(200).send({
                 message: 'Successfully created user token',
                 user: {
                     username: user.username,
                     name: user.name,
-                    role: user.role, // TODO: Be careful with how you store this
+                    role: user.role,
                     avatar: user.avatar
-                }
+                },
+                token
             });
         }
         logger.warn(`Failed login attempt by user ${username}`);
@@ -71,27 +88,17 @@ export async function login (req, res) {
 }
 
 export async function checkAuth (req,res, next) {
-    if (req.cookies.token) {
-        const { token } = req.cookies;
+    if (req.get('Authorization')) {
+        const token = req.get('Authorization').split(" ")[1];
 
         try {
-            const { user } = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
-            logger.verbose('Decoded JWT successfully');
-            const { username }  = user;
-            logger.verbose(`User ${username} is authenticated`);
-            const DbUser = await User.findOne({ username });
-            if (!DbUser) {
-                logger.verbose(`Unexistent user ${username}`);
-                throw new Error(`The user ${username} does not exist`);
-            }
+            const user = await decodeToken(token);
             req.user = user;
             next();
         } catch (err) {
             if (err.name === 'TokenExpiredError') {
-                logger.warn('User token is expired');
                 return res.status(401).send({ message: 'Unauthorized: Session has expired' });
             }
-            res.clearCookie('token');
             logger.error(err);
             return res.status(500).send({ message: `Authentication failure: ${err.message}` });
         }
@@ -123,26 +130,16 @@ export async function checkRole (req,res,next) {
 }
 
 export async function getAuthUser (req,res) {
-    if (req.cookies.token) {
-        const { token } = req.cookies;
+    if (req.get('Authorization')) {
+        const token = req.get('Authorization').split(" ")[1];
 
         try {
-            const { user } = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
-            logger.verbose('Decoded JWT successfully');
-            const { username }  = user;
-            logger.verbose(`User ${username} is authenticated`);
-            const DbUser = await User.findOne({ username });
-            if (!DbUser) {
-                logger.verbose(`Unexistent user ${username}`);
-                throw new Error(`The user ${username} does not exist`);
-            }
+            const user = await decodeToken(token);
             return res.status(200).send({ user });
         } catch (err) {
             if (err.name === 'TokenExpiredError') {
-                logger.warn('User token is expired');
                 return res.status(401).send({ message: 'Unauthorized: Session has expired' });
             }
-            res.clearCookie('token');
             logger.error(err);
             return res.status(500).send({ message: `Authentication failure: ${err.message}` });
         }
@@ -152,8 +149,20 @@ export async function getAuthUser (req,res) {
     }
 }
 
-export async function logout (_,res) {
-    res.clearCookie('token');
-    logger.verbose('User logged out');
-    return res.status(200).send({ message: 'User logged out' });
+export async function logout (req,res) {
+    if (req.get('Authorization')) {
+        const token = req.get('Authorization').split(" ")[1];
+        try {
+            await Session.findOneAndDelete({ token });
+            logger.verbose('User logged out');
+            return res.status(200).send({ message: 'User logged out' });
+        } catch (err) {
+            logger.error(err);
+            return res.status(500).send({ message: `Failed to logout: ${err.message}` });
+        }
+    }
+    else {
+        logger.warn('User is not authenticated');
+        return res.status(403).send({ message: 'Forbbiden: User has not logged in' });
+    }
 }
