@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 const SessionSchema = new mongoose.Schema({
     username: {
         type: String,
+        unique: false,
         required: [true, 'Username is required'],
         validate: {
             validator: function(v) {
