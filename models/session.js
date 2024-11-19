@@ -16,7 +16,8 @@ const SessionSchema = new mongoose.Schema({
         type: String,
         required: true,
         unique: true
-    }
+    },
+    platform: String,
 });
 
 const Session = mongoose.model("Session", SessionSchema);
