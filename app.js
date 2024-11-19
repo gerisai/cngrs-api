@@ -2,8 +2,7 @@ import express from 'express';
 import createError from 'http-errors';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import fileUpload from 'express-fileupload';
-
+import useragent from 'express-useragent';
 import userRouter from './routes/user.js';
 import authRouter from './routes/auth.js';
 import personRouter from './routes/person.js';
@@ -17,11 +16,7 @@ const app = express();
 
 app.use(express.json());
 app.use(cookieParser());
-app.use(fileUpload({
-    limits: { fileSize: 5 * 1024 * 1024 },
-    useTempFiles : true,
-    tempFileDir : process.env.UPLOAD_TEMP_FILE_DIR
-}));
+app.use(useragent.express());
 app.use(cors(corsOptions));
 app.use('/users', userRouter);
 app.use('/auth', authRouter);

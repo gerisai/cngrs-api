@@ -4,19 +4,15 @@ import logger from './logging.js';
 
 const client = new S3Client({});
 const bucket = process.env.S3_BUCKET_NAME;
-const ContentTypes = {
-  png: 'image/png',
-  svg: 'image/svg+xml'
-}
 
-export async function uploadObjectFromFile(filePath, extension, key) {
+export async function uploadObjectFromFile(filePath, mimeType, key) {
   const stream = createReadStream(filePath);
 
   const command = new PutObjectCommand({
     Bucket: process.env.S3_BUCKET_NAME,
     Key: key,
     Body: stream,
-    ContentType: ContentTypes[extension]
+    ContentType: mimeType
   });
   await client.send(command);
   logger.verbose(`Uploaded object to ${bucket} S3 bucket: ${key}`);

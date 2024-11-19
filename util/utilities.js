@@ -28,3 +28,9 @@ export function sleep(ms) {
       setTimeout(resolve, ms);
     });
 }
+
+export const ContentTypes = {
+    jpeg: 'image/jpeg',
+    png: 'image/png',
+    svg: 'image/svg+xml'
+}
