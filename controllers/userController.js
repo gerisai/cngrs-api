@@ -160,6 +160,9 @@ export async function updateUser (req,res) {
             return res.status(404).send({ message: `The user ${username} does not exist` });
         }
         delete req.body.username; // username cannot be overwritten
+        for (const p in req.body) { // delete empty values
+            if (!req.body[p]) delete req.body[p]
+        }
         if (req.body.name) req.body.name = normalizeName(req.body.name);
         Object.assign(user,req.body); // assign updated properties
         const userUpdated = await user.save(); // must be called for the paswword to be hashed

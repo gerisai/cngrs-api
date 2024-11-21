@@ -165,6 +165,9 @@ export async function updatePerson (req,res) {
         if (req.body.name) req.body.name = normalizeName(req.body.name);
         delete req.body.personId // personId cannot be changed
         Object.assign(person,req.body); // assign updated properties
+        for (const p in req.body) { // delete empty values
+            if (!req.body[p]) delete req.body[p]
+        }
         const personUpdated = await person.save(); // No password but keeping consistency
         logger.info(`Updated person ${personUpdated.name}`);
         auditAction(req.user.username, action, resource, personUpdated.personId);
