@@ -64,7 +64,8 @@ export async function login (req, res) {
 
             const session = await Session.create({
                 username,
-                token
+                token,
+                platform: `${req.useragent.platform}/${req.useragent.browser}`
             });
             logger.info(`Added JWT token for ${session.username}`);
 

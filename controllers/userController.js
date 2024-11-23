@@ -1,3 +1,5 @@
+import { unlink } from 'fs';
+import { promisify } from 'util';
 import User from '../models/user.js';
 import Session from '../models/session.js';
 import logger from '../util/logging.js';
@@ -7,6 +9,9 @@ import { s3BucketUrl, s3UserKeyPrefix } from '../util/constants.js';
 import { uploadObjectFromFile, deleteObject } from '../util/s3.js';
 import { parseCsv } from '../util/csv.js';
 import { createUsername, createRandomPassword, sleep, normalizeName } from '../util/utilities.js';
+
+const unLink = promisify(unlink);
+let rmPath; // Needed due to variable scoping in uploadAvatar function
 
 const resource = 'USER';
 
@@ -155,6 +160,9 @@ export async function updateUser (req,res) {
             return res.status(404).send({ message: `The user ${username} does not exist` });
         }
         delete req.body.username; // username cannot be overwritten
+        for (const p in req.body) { // delete empty values
+            if (!req.body[p]) delete req.body[p]
+        }
         if (req.body.name) req.body.name = normalizeName(req.body.name);
         Object.assign(user,req.body); // assign updated properties
         const userUpdated = await user.save(); // must be called for the paswword to be hashed
@@ -202,23 +210,20 @@ export async function deleteUser (req,res) {
 
 export async function uploadAvatar (req,res) {
     const action = 'UPDATE';
-    
     const { username } = req.params;
-
     try {
-        const { tempFilePath: filePath, mimetype: fileType } = req.files.avatar;
         logger.verbose(`Received avatar upload for ${username}`);
-        const extension = fileType.split('/')[1];
         const user = await User.findOne({ username });
         if (!user) {
             logger.verbose(`Unexistent user ${username} cannot be updated`);
             return res.status(404).send({ message: `The user ${username} does not exist` });
         }
 
-        const avatarKey = `${s3UserKeyPrefix}/${req.params.username}/avatar`;
-
-        await uploadObjectFromFile(filePath, extension, avatarKey);
-
+        const { path, mimetype } = req.file;
+        rmPath = path; // This makes it available for finally block
+        const extension = mimetype.split('/')[1];
+        const avatarKey = `${s3UserKeyPrefix}/${req.params.username}/avatar.${extension}`;
+        await uploadObjectFromFile(path, mimetype, avatarKey);
         user.avatar = `${s3BucketUrl}/${avatarKey}`;
         const userUpdated = await user.save();
         logger.info(`Updated user ${userUpdated.username} successfully`);
@@ -229,5 +234,10 @@ export async function uploadAvatar (req,res) {
     } catch (err) {
         logger.error(err);
         return res.status(500).send({ message: err.message });
+    } finally {
+        if (rmPath) {
+            await unLink(rmPath);
+            logger.debug(`Removed local ${rmPath} successfully`);
+        }
     }
 }

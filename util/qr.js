@@ -1,6 +1,7 @@
 import { unlink } from 'fs';
 import QRCode from 'qrcode';
 import { uploadObjectFromFile, deleteObject } from './s3.js';
+import { ContentTypes } from './utilities.js';
 import logger from '../util/logging.js';
 import { s3PersonKeyPrefix } from './constants.js';
 import { promisify } from 'util';
@@ -39,7 +40,7 @@ export async function createUploadQr(resource, id) {
 
       logger.debug(`Created ${ext.toUpperCase()} image for ${filename} locally`);
 
-      await uploadObjectFromFile(filePath, ext, `${s3PersonKeyPrefix}/${id}/${filename}`);
+      await uploadObjectFromFile(filePath, ContentTypes[ext], `${s3PersonKeyPrefix}/${id}/${filename}`);
 
     } catch(err) {
       throw new Error(err);

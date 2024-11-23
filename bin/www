@@ -16,7 +16,9 @@ const uri = `${process.env.DB_STRING}`;
 */
 
 const port = normalizePort(process.env.SERVER_PORT || '9000');
+const address = process.env.SERVER_HOST || '0.0.0.0';
 app.set('port', port);
+app.set('address', address);
 
 /**
  * Create HTTP server.
@@ -31,7 +33,7 @@ const server = http.createServer(app);
 try {
   await mongoose.connect(uri);
   logger.info('Connected to DB');
-  server.listen(port, (err) => {
+  server.listen({ host: address, port }, (err) => {
     if (err) console.error(err);
     logger.info('Server running...');
   });
@@ -98,8 +100,5 @@ function onError(error) {
 
 function onListening() {
   const addr = server.address();
-  const bind = typeof addr === 'string'
-    ? 'pipe ' + addr
-    : 'port ' + addr.port;
-  logger.info(`Listening on ${bind}`);
+  logger.info(`Listening on ${addr.address}:${addr.port}`);
 }

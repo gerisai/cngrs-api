@@ -3,8 +3,8 @@ import mongoose from 'mongoose';
 const SessionSchema = new mongoose.Schema({
     username: {
         type: String,
+        unique: false,
         required: [true, 'Username is required'],
-        unique: true,
         validate: {
             validator: function(v) {
                 return /^[a-z]+$/.test(v);
@@ -16,7 +16,8 @@ const SessionSchema = new mongoose.Schema({
         type: String,
         required: true,
         unique: true
-    }
+    },
+    platform: String,
 });
 
 const Session = mongoose.model("Session", SessionSchema);
