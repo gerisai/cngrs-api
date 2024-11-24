@@ -157,7 +157,7 @@ export async function readPeople (req, res) {
     }
     const { limit = 25, skip = 0 } = req.query
     try {
-        const people = await Person.find(query, 'name accessed gender zone branch room')
+        const people = await Person.find(query)
         .sort({
             name: 1
         })
@@ -167,7 +167,8 @@ export async function readPeople (req, res) {
             email: 1,
             zone: 1,
             branch: 1,
-            accessed: 1
+            accessed: 1,
+            gender: 1
         })
         .limit(limit).skip(skip);
 

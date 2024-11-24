@@ -125,8 +125,15 @@ export async function readUser (req, res) {
 }
 
 export async function readUsers (req, res) {
+    const valid = ['name', 'role'];
+    const query = {};
+    for (const p in req.query) {
+        if (req.query[p] && valid.includes(p)) query[p] = new RegExp(req.query[p], 'i'); 
+    }
+    const { limit = 25, skip = 0 } = req.query
     try {
-        const users = await User.find()
+        const users = await User.find(query)
+        .find({ username: { $not: /root/ } })
         .sort({
             name: 1
         })
@@ -135,13 +142,13 @@ export async function readUsers (req, res) {
             name: 1,
             role: 1,
             avatar: 1
-        });
+        })
+        .limit(limit).skip(skip);
 
-        const filteredUsers = users.filter((user) => user.username != 'root'); // Root user shall never be returned
-        logger.info(`Read all users successfully`);
+        logger.info(`Read ${users.length} users successfully`);
 
         return res.status(200).send({
-            users: filteredUsers,
+            users: users,
             message: `Users fetched successfully`
         });
     } catch(err) {
