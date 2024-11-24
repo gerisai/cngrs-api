@@ -8,7 +8,6 @@ router.post('/', checkAuth, checkRole, personController.createPerson);
 router.put('/', checkAuth, checkRole, personController.updatePerson);
 router.get('/', checkAuth, checkRole, personController.readPeople);
 router.post('/bulkcreate', checkAuth, checkRole, personController.bulkCreatePerson);
-router.get('/search', checkAuth, checkRole, personController.searchPeople);
 router.get('/category', checkAuth, checkRole, personController.getPersonCategory);
 router.get('/:personId', checkAuth, checkRole, personController.readPerson);
 router.delete('/:personId', checkAuth, checkRole, personController.deletePerson);

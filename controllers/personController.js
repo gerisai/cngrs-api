@@ -149,39 +149,15 @@ export async function getPersonCategory (req,res) {
 
 }
 
-export async function searchPeople(req, res) {
+export async function readPeople (req, res) {
     const valid = ['name', 'accessed', 'gender', 'zone', 'branch', 'room', 'city'];
-    if (!req.query) return res.status(400).send({ message: 'Empty query' });
     const query = {};
     for (const p in req.query) {
         if (req.query[p] && valid.includes(p)) query[p] = new RegExp(req.query[p], 'i'); 
     }
-
-    try {
-        const people = await Person.find(query, 'name accessed gender zone branch room')
-        .sort({
-            name: 1
-        })
-        .select({
-            personId: 1,
-            name: 1,
-            email: 1,
-            zone: 1,
-            branch: 1,
-            accessed: 1
-        });
-        logger.debug(`Searche for ${query}`);
-        return res.status(200).send({ people });
-    } catch(err) {
-        logger.error(err);
-        return res.status(500).send({ message: err.message });
-    }
-}
-
-export async function readPeople (req, res) {
     const { limit = 25, skip = 0 } = req.query
     try {
-        const people = await Person.find()
+        const people = await Person.find(query, 'name accessed gender zone branch room')
         .sort({
             name: 1
         })
@@ -195,11 +171,11 @@ export async function readPeople (req, res) {
         })
         .limit(limit).skip(skip);
 
-        logger.info(`Read all people successfully`);
+        logger.info(`Read ${people.length} people successfully`);
 
         return res.status(200).send({
             people,
-            message: `Users fetched successfully`
+            message: `People fetched successfully`
         });
     } catch(err) {
         logger.error(err);
