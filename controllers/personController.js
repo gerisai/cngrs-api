@@ -5,7 +5,7 @@ import { sendMail } from '../util/mailer.js';
 import { createUploadQr, deleteQr } from '../util/qr.js';
 import { s3BucketUrl } from '../util/constants.js';
 import { parseCsv } from '../util/csv.js';
-import { createPersonId, normalizeName, sleep } from '../util/utilities.js';
+import { createPersonId, normalizeName, sleep, sanitize } from '../util/utilities.js';
 
 const resource = 'PERSON';
 
@@ -13,6 +13,7 @@ export async function createPerson (req,res) {
     const action = 'CREATE';
     
     const personId = createPersonId(req.body.name);
+    sanitize(req.body);
 
     try {
         // QR generation
@@ -132,9 +133,36 @@ export async function readPerson (req,res) {
     }
 }
 
-export async function readPeople (req, res) {
+export async function getPersonCategory (req,res) {
+    const valid = ['zone', 'branch', 'city'];
+    const { name } = req.query;
+    if (!req.query|| !valid.includes(name)) return res.status(400).send({ message: `Invalid or empty category: ${name}` });
+    
     try {
-        const people = await Person.find().select({
+        const category = await Person.distinct(name);
+        logger.debug(`Fetched ${name} category`);
+        return res.status(200).send({ [name]: category });
+    } catch(err) {
+        logger.error(err);
+        return res.status(500).send({ message: err.message });
+    }
+
+}
+
+export async function searchPeople(req, res) {
+    const valid = ['name', 'accessed', 'gender', 'zone', 'branch', 'room', 'city'];
+    if (!req.query) return res.status(400).send({ message: 'Empty query' });
+    const query = {};
+    for (const p in req.query) {
+        if (req.query[p] && valid.includes(p)) query[p] = new RegExp(req.query[p], 'i'); 
+    }
+
+    try {
+        const people = await Person.find(query, 'name accessed gender zone branch room')
+        .sort({
+            name: 1
+        })
+        .select({
             personId: 1,
             name: 1,
             email: 1,
@@ -142,6 +170,30 @@ export async function readPeople (req, res) {
             branch: 1,
             accessed: 1
         });
+        logger.debug(`Searche for ${query}`);
+        return res.status(200).send({ people });
+    } catch(err) {
+        logger.error(err);
+        return res.status(500).send({ message: err.message });
+    }
+}
+
+export async function readPeople (req, res) {
+    const { limit = 25, skip = 0 } = req.query
+    try {
+        const people = await Person.find()
+        .sort({
+            name: 1
+        })
+        .select({
+            personId: 1,
+            name: 1,
+            email: 1,
+            zone: 1,
+            branch: 1,
+            accessed: 1
+        })
+        .limit(limit).skip(skip);
 
         logger.info(`Read all people successfully`);
 

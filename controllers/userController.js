@@ -8,7 +8,7 @@ import { sendMail } from '../util/mailer.js';
 import { s3BucketUrl, s3UserKeyPrefix } from '../util/constants.js';
 import { uploadObjectFromFile, deleteObject } from '../util/s3.js';
 import { parseCsv } from '../util/csv.js';
-import { createUsername, createRandomPassword, sleep, normalizeName } from '../util/utilities.js';
+import { sanitize, createUsername, createRandomPassword, sleep, normalizeName } from '../util/utilities.js';
 
 const unLink = promisify(unlink);
 let rmPath; // Needed due to variable scoping in uploadAvatar function
@@ -22,6 +22,7 @@ export async function createUser (req, res) {
         return res.status(403).send({ message: `Root role is reserved and cannot be taken` });
     }
     
+    sanitize(req.body);
     try {
         const newUser = await User.create({
             username: req.body.username,
@@ -125,7 +126,11 @@ export async function readUser (req, res) {
 
 export async function readUsers (req, res) {
     try {
-        const users = await User.find().select({
+        const users = await User.find()
+        .sort({
+            name: 1
+        })
+        .select({
             username: 1,
             name: 1,
             role: 1,
