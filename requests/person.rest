@@ -61,3 +61,9 @@ Content-Type: application/json
 DELETE {{baseUrl}}/people/josuelopez
 Authorization: Bearer {{authToken}}
 Content-Type: application/json
+
+###
+
+# Get stats
+GET {{baseUrl}}/people/stats?accessed=1
+Authorization: Bearer {{authToken}}

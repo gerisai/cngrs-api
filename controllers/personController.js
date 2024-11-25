@@ -230,3 +230,24 @@ export async function deletePerson (req,res) {
         return res.status(500).send({ message: err.message });
     }
 }
+
+export async function getStats (req,res) {
+    const valid = ['accessed'];
+    const query = {};
+    for (const p in req.query) {
+        if (req.query[p] && valid.includes(p)) query[p] = true; 
+    }
+    try {
+        const count = await Person.countDocuments(query);
+
+        logger.info(`Checked statistics for ${count} people successfully`);
+
+        return res.status(200).send({
+            count,
+            message: `People fetched successfully`
+        });
+    } catch(err) {
+        logger.error(err);
+        return res.status(500).send({ message: err.message });
+    }
+}
