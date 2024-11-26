@@ -153,8 +153,12 @@ export async function readPeople (req, res) {
     const valid = ['name', 'accessed', 'gender', 'zone', 'branch', 'room', 'city'];
     const query = {};
     for (const p in req.query) {
-        if (req.query[p] && valid.includes(p)) query[p] = new RegExp(req.query[p], 'i'); 
+        if (req.query[p] && valid.includes(p)) {
+            if (req.query[p].includes(',')) query[p] = req.query[p].split(',').map((e) => new RegExp(e, 'i'))
+            else query[p] = new RegExp(req.query[p], 'i');
+        }
     }
+
     const { limit = 25, skip = 0 } = req.query
     try {
         const people = await Person.find(query)

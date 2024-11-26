@@ -30,17 +30,12 @@ Authorization: Bearer {{authToken}}
 
 ###
 # Get people
-GET {{baseUrl}}/people?limit=1&skip=1
+GET {{baseUrl}}/people?zone=CDMX,OAXACA
 Authorization: Bearer {{authToken}}
 
 ###
 # Get category
 GET {{baseUrl}}/people/category?name=zone
-Authorization: Bearer {{authToken}}
-
-###
-# Query people
-GET {{baseUrl}}/people/search?name=abi
 Authorization: Bearer {{authToken}}
 
 
