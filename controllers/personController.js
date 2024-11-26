@@ -134,7 +134,7 @@ export async function readPerson (req,res) {
 }
 
 export async function getPersonCategory (req,res) {
-    const valid = ['zone', 'branch', 'city'];
+    const valid = ['room', 'zone', 'branch', 'city', 'accessed'];
     const { name } = req.query;
     if (!req.query|| !valid.includes(name)) return res.status(400).send({ message: `Invalid or empty category: ${name}` });
     
@@ -146,7 +146,6 @@ export async function getPersonCategory (req,res) {
         logger.error(err);
         return res.status(500).send({ message: err.message });
     }
-
 }
 
 export async function readPeople (req, res) {
@@ -154,8 +153,9 @@ export async function readPeople (req, res) {
     const query = {};
     for (const p in req.query) {
         if (req.query[p] && valid.includes(p)) {
-            if (req.query[p].includes(',')) query[p] = req.query[p].split(',').map((e) => new RegExp(e, 'i'))
-            else query[p] = new RegExp(req.query[p], 'i');
+            if (Array.isArray(req.query[p])) query[p] = req.query[p].map((e) => new RegExp(e, 'i'))
+            if (p !== 'accessed') query[p] = new RegExp(req.query[p], 'i');
+            if (p === 'accessed') query[p] = req.query[p];
         }
     }
 

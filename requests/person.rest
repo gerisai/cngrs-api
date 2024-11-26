@@ -30,12 +30,12 @@ Authorization: Bearer {{authToken}}
 
 ###
 # Get people
-GET {{baseUrl}}/people?zone=CDMX,OAXACA
+GET {{baseUrl}}/people?zone=CDMX,Edo Mex
 Authorization: Bearer {{authToken}}
 
 ###
 # Get category
-GET {{baseUrl}}/people/category?name=zone
+GET {{baseUrl}}/people/category?name=accessed
 Authorization: Bearer {{authToken}}
 
 
