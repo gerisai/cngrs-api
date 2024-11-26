@@ -141,7 +141,7 @@ export async function getPersonCategory (req,res) {
     try {
         const category = await Person.distinct(name);
         logger.debug(`Fetched ${name} category`);
-        return res.status(200).send({ [name]: category });
+        return res.status(200).send({ category });
     } catch(err) {
         logger.error(err);
         return res.status(500).send({ message: err.message });
