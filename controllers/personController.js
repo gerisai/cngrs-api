@@ -149,17 +149,24 @@ export async function getPersonCategory (req,res) {
 }
 
 export async function readPeople (req, res) {
+    const accessed = {
+        "true": true,
+        "false": false
+    }
     const valid = ['name', 'accessed', 'gender', 'zone', 'branch', 'room', 'city'];
     const query = {};
     for (const p in req.query) {
         if (req.query[p] && valid.includes(p)) {
-            if (Array.isArray(req.query[p])) query[p] = req.query[p].map((e) => new RegExp(e, 'i'))
-            if (p !== 'accessed') query[p] = new RegExp(req.query[p], 'i');
-            if (p === 'accessed') query[p] = req.query[p];
+            if (Array.isArray(req.query[p])) {
+                query[p] = req.query[p].map((e) => accessed[e] !== undefined ? accessed[e] : new RegExp(e, 'i'))
+            } else {
+                query[p] = new RegExp(e, 'i');
+            }
         }
     }
 
-    const { limit = 25, skip = 0 } = req.query
+    const { limit = 25, page = 1 } = req.query
+    const skip = limit * (page - 1) > 0 ? limit*(page - 1) : 0;
     try {
         const people = await Person.find(query)
         .sort({
