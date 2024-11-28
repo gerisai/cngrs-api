@@ -11,7 +11,15 @@ const resource = 'PERSON';
 
 export async function createPerson (req,res) {
     const action = 'CREATE';
-    
+    const mandatory = ['name','email','gender', 'cellphone']
+    for (const p in req.body) { // delete empty values
+        if (!req.body[p]) delete req.body[p]
+    }
+
+    if (mandatory.filter(v => !Object.keys(req.body).includes(v)).length !== 0) {
+        return res.status(400).send({ message: `The ${mandatory.join(', ')} fields are mandatory` });
+    }
+
     const personId = createPersonId(req.body.name);
     sanitize(req.body);
 
@@ -160,7 +168,7 @@ export async function readPeople (req, res) {
             if (Array.isArray(req.query[p])) {
                 query[p] = req.query[p].map((e) => accessed[e] !== undefined ? accessed[e] : new RegExp(e, 'i'))
             } else {
-                query[p] = new RegExp(e, 'i');
+                query[p] = new RegExp(req.query[p], 'i');
             }
         }
     }
@@ -232,13 +240,17 @@ export async function deletePerson (req,res) {
         
         logger.warn(`Deleted ${person.name} successfully`);
         auditAction(req.user.username, action, resource, person.personId);
-        
-        await deleteQr(personId);
 
         return res.status(200).send({ message: `Person ${person.name} deleted successfully` });
     } catch (err) {
         logger.error(err);
         return res.status(500).send({ message: err.message });
+    } finally {
+        try {
+            await deleteQr(personId);
+        } catch(err) {
+            logger.error(err);
+        }
     }
 }
 

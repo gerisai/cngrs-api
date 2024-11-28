@@ -18,6 +18,15 @@ const resource = 'USER';
 export async function createUser (req, res) {
     const action = 'CREATE';
 
+    const mandatory = ['username','name','password', 'email', 'role']
+    for (const p in req.body) { // delete empty values
+        if (!req.body[p]) delete req.body[p]
+    }
+
+    if (mandatory.filter(v => !Object.keys(req.body).includes(v)).length !== 0) {
+        return res.status(400).send({ message: `The ${mandatory.join(', ')} fields are mandatory` });
+    }
+
     if (req.body.role === 'root') {
         return res.status(403).send({ message: `Root role is reserved and cannot be taken` });
     }
@@ -191,6 +200,7 @@ export async function updateUser (req,res) {
 
 export async function deleteUser (req,res) {
     const action = 'DELETE';
+    let deleteAvatar = false;
 
     if (req.params.username === 'root') {
         return res.status(403).send({ message: `Root user is reserved and cannot be deleted` });
@@ -202,10 +212,7 @@ export async function deleteUser (req,res) {
             logger.verbose(`Unexistent user ${req.params.username} cannot be deleted`);
             return res.status(404).send({ message: 'Unexistent user' });
         }
-        if (user.avatar) {
-            const avatarKey = `${s3UserKeyPrefix}/${req.params.username}/avatar`;
-            await deleteObject(avatarKey);
-        }
+        if (user.avatar) deleteAvatar = true;
 
         // Delete all user's sessions
         await Session.deleteMany({ username: user.username });
@@ -218,6 +225,13 @@ export async function deleteUser (req,res) {
     } catch (err) {
         logger.error(err);
         return res.status(500).send({ message: err.message });
+    } finally {
+        try {
+            const avatarKey = `${s3UserKeyPrefix}/${req.params.username}/avatar`;
+            await deleteObject(avatarKey);
+        } catch (err) {
+            logger.error(err);
+        }
     }
 }
 
