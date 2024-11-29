@@ -104,7 +104,7 @@ export async function bulkCreatePerson (req,res) {
         auditAction(req.user.username, action, resource);
         return res.status(200).send({ message: `${people.length} asistants were created successfully` });
     } catch (err) {
-        logger.error(err);
+        logger.error(err.message);
         return res.status(500).send({ message: err.message });
     }
 }
@@ -136,7 +136,7 @@ export async function readPerson (req,res) {
             message: `Fetched ${person.name}` 
         });
     } catch(err) {
-        logger.error(err);
+        logger.error(err.message);
         return res.status(500).send({ message: err.message });
     }
 }
@@ -151,7 +151,7 @@ export async function getPersonCategory (req,res) {
         logger.debug(`Fetched ${name} category`);
         return res.status(200).send({ category });
     } catch(err) {
-        logger.error(err);
+        logger.error(err.message);
         return res.status(500).send({ message: err.message });
     }
 }
@@ -198,7 +198,7 @@ export async function readPeople (req, res) {
             message: `People fetched successfully`
         });
     } catch(err) {
-        logger.error(err);
+        logger.error(err.message);
         return res.status(500).send({ message: err.message });
     }
 }
@@ -224,7 +224,7 @@ export async function updatePerson (req,res) {
             message: `Person ${personUpdated.name} updated` 
         });
     } catch(err) {
-        logger.error(err);
+        logger.error(err.message);
         return res.status(500).send({ message: err.message });
     }
 }
@@ -243,13 +243,13 @@ export async function deletePerson (req,res) {
 
         return res.status(200).send({ message: `Person ${person.name} deleted successfully` });
     } catch (err) {
-        logger.error(err);
+        logger.error(err.message);
         return res.status(500).send({ message: err.message });
     } finally {
         try {
             await deleteQr(personId);
         } catch(err) {
-            logger.error(err);
+            logger.error(err.message);
         }
     }
 }
@@ -270,7 +270,7 @@ export async function getStats (req,res) {
             message: `People fetched successfully`
         });
     } catch(err) {
-        logger.error(err);
+        logger.error(err.message);
         return res.status(500).send({ message: err.message });
     }
 }

@@ -61,7 +61,7 @@ export async function createUser (req, res) {
             logger.verbose(`Username ${req.body.username} already exist`);
             err.message = `Username ${req.body.username} already exist`;
         }
-        logger.error(err);
+        logger.error(err.message);
         return res.status(400).send({ message: err.message });
     }
 }
@@ -101,7 +101,7 @@ export async function bulkCreateUser (req,res) {
         auditAction(req.user.username, action, resource);
         return res.status(200).send({ message: `${users.length} users were created successfully` });
     } catch (err) {
-        logger.error(err);
+        logger.error(err.message);
         return res.status(500).send({ message: err.message });
     }
 }
@@ -128,7 +128,7 @@ export async function readUser (req, res) {
             message: `User ${user.username} fetched`
         });
     } catch(err) {
-        logger.error(err);
+        logger.error(err.message);
         return res.status(500).send({ message: err.message });
     }
 }
@@ -168,7 +168,7 @@ export async function readUsers (req, res) {
             message: `Users fetched successfully`
         });
     } catch(err) {
-        logger.error(err);
+        logger.error(err.message);
         return res.status(500).send({ message: err.message });
     }
 }
@@ -199,7 +199,7 @@ export async function updateUser (req,res) {
         
         return res.status(200).send({ message: `User ${userUpdated.username} updated` });
     } catch(err) {
-        logger.error(err);
+        logger.error(err.message);
         return res.status(500).send({ message: err.message });
     }
 }
@@ -229,14 +229,14 @@ export async function deleteUser (req,res) {
 
         return res.status(200).send({ message: `User ${user.username} deleted successfully` });
     } catch (err) {
-        logger.error(err);
+        logger.error(err.message);
         return res.status(500).send({ message: err.message });
     } finally {
         try {
             const avatarKey = `${s3UserKeyPrefix}/${req.params.username}/avatar`;
             await deleteObject(avatarKey);
         } catch (err) {
-            logger.error(err);
+            logger.error(err.message);
         }
     }
 }
@@ -265,7 +265,7 @@ export async function uploadAvatar (req,res) {
 
         return res.status(200).send({ message: 'Avatar uploaded correctly' });
     } catch (err) {
-        logger.error(err);
+        logger.error(err.message);
         return res.status(500).send({ message: err.message });
     } finally {
         if (rmPath) {

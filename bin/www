@@ -38,7 +38,7 @@ try {
     logger.info('Server running...');
   });
 } catch (err) {
-  logger.error(err);
+  logger.error(err.message);
 }
 
 const db = mongoose.connection;

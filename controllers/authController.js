@@ -83,7 +83,7 @@ export async function login (req, res) {
         logger.warn(`Failed login attempt by user ${username}`);
         return res.status(401).send({ message: 'Incorrect username or password' });
     } catch(err) {
-        logger.error(err);
+        logger.error(err.message);
         return res.status(500).send({ message: `Unexpected error, please try again: ${err.message}` });
     }
 }
@@ -100,7 +100,7 @@ export async function checkAuth (req,res, next) {
             if (err.name === 'TokenExpiredError') {
                 return res.status(401).send({ message: 'Unauthorized: Session has expired' });
             }
-            logger.error(err);
+            logger.error(err.message);
             return res.status(500).send({ message: `Authentication failure: ${err.message}` });
         }
     } else {
@@ -141,7 +141,7 @@ export async function getAuthUser (req,res) {
             if (err.name === 'TokenExpiredError') {
                 return res.status(401).send({ message: 'Unauthorized: Session has expired' });
             }
-            logger.error(err);
+            logger.error(err.message);
             return res.status(500).send({ message: `Authentication failure: ${err.message}` });
         }
     } else {
@@ -158,7 +158,7 @@ export async function logout (req,res) {
             logger.verbose('User logged out');
             return res.status(200).send({ message: 'User logged out' });
         } catch (err) {
-            logger.error(err);
+            logger.error(err.message);
             return res.status(500).send({ message: `Failed to logout: ${err.message}` });
         }
     }
