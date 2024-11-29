@@ -137,7 +137,13 @@ export async function readUsers (req, res) {
     const valid = ['name', 'role'];
     const query = {};
     for (const p in req.query) {
-        if (req.query[p] && valid.includes(p)) query[p] = req.query[p].map((e) => new RegExp(e, 'i'));
+        if (req.query[p] && valid.includes(p)) {
+            if (Array.isArray(req.query[p])) {
+                query[p] = req.query[p].map((e) => accessed[e] !== undefined ? accessed[e] : new RegExp(e, 'i'))
+            } else {
+                query[p] = new RegExp(req.query[p], 'i');
+            }
+        }
     }
     const { limit = 25, page = 1 } = req.query;
     const skip = limit * (page - 1) > 0 ? limit*(page - 1) : 0;
