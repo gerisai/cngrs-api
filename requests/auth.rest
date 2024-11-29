@@ -1,28 +1,27 @@
-@baseUrl = http://localhost:3000
+@baseUrl = http://localhost:8080
 
-# Create Admin JWT
+# Create JWT
+# @name login
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
 {
-  "username": "gerardoisai",
-  "password": "p@55word"
+  "username": "test",
+  "password": "secure"
 }
 
 ###
-# Get status
-GET {{baseUrl}}/auth/status
+@authToken = {{login.response.body.$.token}}
 
 ###
+
+# Get status
+GET {{baseUrl}}/auth
+Authorization: Bearer {{authToken}}
+
+###
+
 # Logout
 GET {{baseUrl}}/auth/logout
+Authorization: Bearer {{authToken}}}
 
-###
-# Create operator JWT
-POST {{baseUrl}}/auth/login
-Content-Type: application/json
-
-{
-  "username": "msilverio",
-  "password": "p@55word"
-}

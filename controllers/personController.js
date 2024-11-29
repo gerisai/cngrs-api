@@ -5,14 +5,23 @@ import { sendMail } from '../util/mailer.js';
 import { createUploadQr, deleteQr } from '../util/qr.js';
 import { s3BucketUrl } from '../util/constants.js';
 import { parseCsv } from '../util/csv.js';
-import { createPersonId, normalizeName, sleep } from '../util/utilities.js';
+import { createPersonId, normalizeName, sleep, sanitize } from '../util/utilities.js';
 
 const resource = 'PERSON';
 
 export async function createPerson (req,res) {
     const action = 'CREATE';
-    
+    const mandatory = ['name','email','gender', 'cellphone']
+    for (const p in req.body) { // delete empty values
+        if (!req.body[p]) delete req.body[p]
+    }
+
+    if (mandatory.filter(v => !Object.keys(req.body).includes(v)).length !== 0) {
+        return res.status(400).send({ message: `The ${mandatory.join(', ')} fields are mandatory` });
+    }
+
     const personId = createPersonId(req.body.name);
+    sanitize(req.body);
 
     try {
         // QR generation
@@ -132,22 +141,61 @@ export async function readPerson (req,res) {
     }
 }
 
-export async function readPeople (req, res) {
+export async function getPersonCategory (req,res) {
+    const valid = ['room', 'zone', 'branch', 'city', 'accessed'];
+    const { name } = req.query;
+    if (!req.query|| !valid.includes(name)) return res.status(400).send({ message: `Invalid or empty category: ${name}` });
+    
     try {
-        const people = await Person.find().select({
+        const category = await Person.distinct(name);
+        logger.debug(`Fetched ${name} category`);
+        return res.status(200).send({ category });
+    } catch(err) {
+        logger.error(err);
+        return res.status(500).send({ message: err.message });
+    }
+}
+
+export async function readPeople (req, res) {
+    const accessed = {
+        "true": true,
+        "false": false
+    }
+    const valid = ['name', 'accessed', 'gender', 'zone', 'branch', 'room', 'city'];
+    const query = {};
+    for (const p in req.query) {
+        if (req.query[p] && valid.includes(p)) {
+            if (Array.isArray(req.query[p])) {
+                query[p] = req.query[p].map((e) => accessed[e] !== undefined ? accessed[e] : new RegExp(e, 'i'))
+            } else {
+                query[p] = new RegExp(req.query[p], 'i');
+            }
+        }
+    }
+
+    const { limit = 25, page = 1 } = req.query
+    const skip = limit * (page - 1) > 0 ? limit*(page - 1) : 0;
+    try {
+        const people = await Person.find(query)
+        .sort({
+            name: 1
+        })
+        .select({
             personId: 1,
             name: 1,
             email: 1,
             zone: 1,
             branch: 1,
-            accessed: 1
-        });
+            accessed: 1,
+            gender: 1
+        })
+        .limit(limit).skip(skip);
 
-        logger.info(`Read all people successfully`);
+        logger.info(`Read ${people.length} people successfully`);
 
         return res.status(200).send({
             people,
-            message: `Users fetched successfully`
+            message: `People fetched successfully`
         });
     } catch(err) {
         logger.error(err);
@@ -192,11 +240,36 @@ export async function deletePerson (req,res) {
         
         logger.warn(`Deleted ${person.name} successfully`);
         auditAction(req.user.username, action, resource, person.personId);
-        
-        await deleteQr(personId);
 
         return res.status(200).send({ message: `Person ${person.name} deleted successfully` });
     } catch (err) {
+        logger.error(err);
+        return res.status(500).send({ message: err.message });
+    } finally {
+        try {
+            await deleteQr(personId);
+        } catch(err) {
+            logger.error(err);
+        }
+    }
+}
+
+export async function getStats (req,res) {
+    const valid = ['accessed'];
+    const query = {};
+    for (const p in req.query) {
+        if (req.query[p] && valid.includes(p)) query[p] = true; 
+    }
+    try {
+        const count = await Person.countDocuments(query);
+
+        logger.info(`Checked statistics for ${count} people successfully`);
+
+        return res.status(200).send({
+            count,
+            message: `People fetched successfully`
+        });
+    } catch(err) {
         logger.error(err);
         return res.status(500).send({ message: err.message });
     }

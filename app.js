@@ -2,6 +2,7 @@ import express from 'express';
 import createError from 'http-errors';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
+import logger from './util/logging.js';
 import useragent from 'express-useragent';
 import userRouter from './routes/user.js';
 import authRouter from './routes/auth.js';
@@ -18,6 +19,10 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(useragent.express());
 app.use(cors(corsOptions));
+app.use('/', function(req,res, next) { // Request logger
+    logger.debug(`${req.method} ${req.path}`);
+    next();
+});
 app.use('/users', userRouter);
 app.use('/auth', authRouter);
 app.use('/people', personRouter);

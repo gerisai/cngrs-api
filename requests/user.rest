@@ -1,28 +1,56 @@
-@baseUrl = http://localhost:3000
+@baseUrl = http://localhost:8080
 
-# Create Admin User
+# Create operator user
 POST {{baseUrl}}/users
 Content-Type: application/json
 
 {
-  "username": "gerardoisai",
-  "name": "Gerardo Diaz",
-  "role": "admin",
-  "password": "p@55word"
+  "username": "test",
+  "name": "Test User",
+  "role": "operator",
+  "password": "secure"
 }
+
+# Create admin user
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+  "username": "testadmin",
+  "name": "Test Admin",
+  "role": "admin",
+  "password": "secureadm"
+}
+
+###
+# Create JWT
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "testadmin",
+  "password": "secureadm"
+}
+
+###
+@authToken = {{login.response.body.$.token}}
 
 ###
 # Read User
 GET {{baseUrl}}/users/gerardoisai
+Authorization: Bearer {{authToken}}
 
 ###
 # Read Users
 GET {{baseUrl}}/users
+Authorization: Bearer {{authToken}}
 
 ###
 # Update user
 PUT {{baseUrl}}/user
 Content-Type: application/json
+Authorization: Bearer {{authToken}}
 
 {
   "username": "gerardoisai",
@@ -33,15 +61,4 @@ Content-Type: application/json
 ###
 # Delete User
 DELETE {{baseUrl}}/users/gerardoisai
-
-###
-# Create Operator User
-POST {{baseUrl}}/users
-Content-Type: application/json
-
-{
-  "username": "msilverio",
-  "name": "Martin Silverio",
-  "role": "operator",
-  "password": "p@55word"
-}
+Authorization: Bearer {{authToken}}

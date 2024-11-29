@@ -8,7 +8,7 @@ import { sendMail } from '../util/mailer.js';
 import { s3BucketUrl, s3UserKeyPrefix } from '../util/constants.js';
 import { uploadObjectFromFile, deleteObject } from '../util/s3.js';
 import { parseCsv } from '../util/csv.js';
-import { createUsername, createRandomPassword, sleep, normalizeName } from '../util/utilities.js';
+import { sanitize, createUsername, createRandomPassword, sleep, normalizeName } from '../util/utilities.js';
 
 const unLink = promisify(unlink);
 let rmPath; // Needed due to variable scoping in uploadAvatar function
@@ -18,10 +18,20 @@ const resource = 'USER';
 export async function createUser (req, res) {
     const action = 'CREATE';
 
+    const mandatory = ['username','name','password', 'email', 'role']
+    for (const p in req.body) { // delete empty values
+        if (!req.body[p]) delete req.body[p]
+    }
+
+    if (mandatory.filter(v => !Object.keys(req.body).includes(v)).length !== 0) {
+        return res.status(400).send({ message: `The ${mandatory.join(', ')} fields are mandatory` });
+    }
+
     if (req.body.role === 'root') {
         return res.status(403).send({ message: `Root role is reserved and cannot be taken` });
     }
     
+    sanitize(req.body);
     try {
         const newUser = await User.create({
             username: req.body.username,
@@ -124,19 +134,37 @@ export async function readUser (req, res) {
 }
 
 export async function readUsers (req, res) {
+    const valid = ['name', 'role'];
+    const query = {};
+    for (const p in req.query) {
+        if (req.query[p] && valid.includes(p)) {
+            if (Array.isArray(req.query[p])) {
+                query[p] = req.query[p].map((e) => accessed[e] !== undefined ? accessed[e] : new RegExp(e, 'i'))
+            } else {
+                query[p] = new RegExp(req.query[p], 'i');
+            }
+        }
+    }
+    const { limit = 25, page = 1 } = req.query;
+    const skip = limit * (page - 1) > 0 ? limit*(page - 1) : 0;
     try {
-        const users = await User.find().select({
+        const users = await User.find(query)
+        .find({ username: { $not: /root/ } })
+        .sort({
+            name: 1
+        })
+        .select({
             username: 1,
             name: 1,
             role: 1,
             avatar: 1
-        });
+        })
+        .limit(limit).skip(skip);
 
-        const filteredUsers = users.filter((user) => user.username != 'root'); // Root user shall never be returned
-        logger.info(`Read all users successfully`);
+        logger.info(`Read ${users.length} users successfully`);
 
         return res.status(200).send({
-            users: filteredUsers,
+            users: users,
             message: `Users fetched successfully`
         });
     } catch(err) {
@@ -178,6 +206,7 @@ export async function updateUser (req,res) {
 
 export async function deleteUser (req,res) {
     const action = 'DELETE';
+    let deleteAvatar = false;
 
     if (req.params.username === 'root') {
         return res.status(403).send({ message: `Root user is reserved and cannot be deleted` });
@@ -189,10 +218,7 @@ export async function deleteUser (req,res) {
             logger.verbose(`Unexistent user ${req.params.username} cannot be deleted`);
             return res.status(404).send({ message: 'Unexistent user' });
         }
-        if (user.avatar) {
-            const avatarKey = `${s3UserKeyPrefix}/${req.params.username}/avatar`;
-            await deleteObject(avatarKey);
-        }
+        if (user.avatar) deleteAvatar = true;
 
         // Delete all user's sessions
         await Session.deleteMany({ username: user.username });
@@ -205,6 +231,13 @@ export async function deleteUser (req,res) {
     } catch (err) {
         logger.error(err);
         return res.status(500).send({ message: err.message });
+    } finally {
+        try {
+            const avatarKey = `${s3UserKeyPrefix}/${req.params.username}/avatar`;
+            await deleteObject(avatarKey);
+        } catch (err) {
+            logger.error(err);
+        }
     }
 }
 

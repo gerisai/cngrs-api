@@ -23,6 +23,12 @@ export function createRandomPassword(length) {
     return result;
 }
 
+export function sanitize(fields) {
+    for (const p in fields) {
+        fields[p] = fields[p].trim();
+    }
+}
+
 export function sleep(ms) {
     return new Promise((resolve) => {
       setTimeout(resolve, ms);

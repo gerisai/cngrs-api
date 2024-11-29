@@ -1,7 +1,22 @@
-@baseUrl = http://localhost:3000
+@baseUrl = http://localhost:8080
+
+# Create JWT
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "test",
+  "password": "secure"
+}
+
+###
+@authToken = {{login.response.body.$.token}}
+
 
 # Create Person
 POST {{baseUrl}}/people
+Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
@@ -11,10 +26,23 @@ Content-Type: application/json
 ###
 # Get Person
 GET {{baseUrl}}/people/josuelopez
+Authorization: Bearer {{authToken}}
+
+###
+# Get people
+GET {{baseUrl}}/people?zone=CDMX,Edo Mex
+Authorization: Bearer {{authToken}}
+
+###
+# Get category
+GET {{baseUrl}}/people/category?name=accessed
+Authorization: Bearer {{authToken}}
+
 
 ###
 # Update Person
 PUT {{baseUrl}}/people
+Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
@@ -26,4 +54,11 @@ Content-Type: application/json
 
 # Delete Person
 DELETE {{baseUrl}}/people/josuelopez
+Authorization: Bearer {{authToken}}
 Content-Type: application/json
+
+###
+
+# Get stats
+GET {{baseUrl}}/people/stats?accessed=1
+Authorization: Bearer {{authToken}}

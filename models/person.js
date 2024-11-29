@@ -55,6 +55,7 @@ const PersonSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    city: String,
     qrurl: String,
     illness: String,
     tutor: String,
