@@ -203,6 +203,29 @@ export async function readPeople (req, res) {
     }
 }
 
+export async function readPeopleNames (req, res) {
+    try {
+        const peopleNames = await Person.find({})
+        .sort({
+            name: 1
+        })
+        .select({
+            _id: 0,
+            name: 1
+        })
+
+        logger.info(`Read all people names successfully`);
+
+        return res.status(200).send({
+            peopleNames,
+            message: `People names fetched successfully`
+        });
+    } catch(err) {
+        logger.error(err.message);
+        return res.status(500).send({ message: err.message });
+    }
+}
+
 export async function updatePerson (req,res) {
     const action = 'UPDATE';
 

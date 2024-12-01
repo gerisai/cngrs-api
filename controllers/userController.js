@@ -173,6 +173,29 @@ export async function readUsers (req, res) {
     }
 }
 
+export async function readUsersNames (req, res) {
+    try {
+        const usersNames = await User.find({})
+        .sort({
+            name: 1
+        })
+        .select({
+            _id: 0,
+            name: 1
+        })
+
+        logger.info(`Read all users names successfully`);
+
+        return res.status(200).send({
+            usersNames,
+            message: `Users names fetched successfully`
+        });
+    } catch(err) {
+        logger.error(err.message);
+        return res.status(500).send({ message: err.message });
+    }
+}
+
 export async function updateUser (req,res) {
     const { username } = req.body;
     const action = 'UPDATE';

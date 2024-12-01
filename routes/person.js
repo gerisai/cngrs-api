@@ -7,6 +7,7 @@ const router = express.Router();
 router.post('/', checkAuth, checkRole, personController.createPerson);
 router.put('/', checkAuth, checkRole, personController.updatePerson);
 router.get('/', checkAuth, checkRole, personController.readPeople);
+router.get('/allnames', checkAuth, checkRole, personController.readPeopleNames);
 router.post('/bulkcreate', checkAuth, checkRole, personController.bulkCreatePerson);
 router.get('/category', checkAuth, checkRole, personController.getPersonCategory);
 router.get('/stats', checkAuth, checkRole, personController.getStats);

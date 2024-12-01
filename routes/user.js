@@ -23,6 +23,7 @@ const upload = multer({
 });
 
 router.post('/', checkAuth, checkRole, userController.createUser);
+router.get('/allnames', checkAuth, checkRole, userController.readUsersNames);
 router.post('/bulkcreate', checkAuth, checkRole, userController.bulkCreateUser);
 router.post('/:username', checkAuth, checkRole, upload.single('avatar'), userController.uploadAvatar);
 router.get('/', checkAuth, checkRole, userController.readUsers);
