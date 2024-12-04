@@ -1,9 +1,5 @@
 resource "aws_s3_bucket" "cngrs_bucket" {
   bucket = var.cngrs_bucket_name
-
-  tags = merge({
-    Name = "cngrs"
-  }, local.tags)
 }
 
 resource "aws_s3_bucket_ownership_controls" "cngrs_bucket_owner" {

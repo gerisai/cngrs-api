@@ -54,8 +54,7 @@ resource "aws_iam_policy" "cngrs_api_access_policy" {
 resource "aws_iam_role" "cngrs_api_access_role" {
   name = "cngrs_api_access_role"
 
-  assume_role_policy  = data.aws_iam_policy_document.cngrs_api_access_trust_policy.json
-  tags = local.tags
+  assume_role_policy = data.aws_iam_policy_document.cngrs_api_access_trust_policy.json
 }
 
 resource "aws_iam_role_policy_attachment" "cngrs_api_access_role_attachment" {
@@ -115,9 +114,8 @@ resource "aws_iam_policy" "cngrs_api_instance_policy" {
 }
 
 resource "aws_iam_role" "cngrs_api_instance_role" {
-  name = "cngrs_api_instance_role"
-  assume_role_policy  = data.aws_iam_policy_document.cngrs_api_instance_trust_policy.json
-  tags = local.tags
+  name               = "cngrs_api_instance_role"
+  assume_role_policy = data.aws_iam_policy_document.cngrs_api_instance_trust_policy.json
 }
 
 resource "aws_iam_role_policy_attachment" "cngrs_api_instance_role_attachment" {
@@ -142,7 +140,7 @@ resource "aws_iam_policy" "gh_actions_runners_policy" {
           "ecr:PutImage"
         ]
         Effect   = "Allow"
-        Resource = "${aws_ecr_repository.cngrs.arn}"
+        Resource = "${aws_ecr_repository.cngrs-api.arn}"
       },
       {
         Action   = "ecr:GetAuthorizationToken"
@@ -166,8 +164,6 @@ resource "aws_iam_policy" "gh_actions_runners_policy" {
 resource "aws_iam_user" "gh_actions_runners" {
   name = "gha_runners"
   path = "/"
-
-  tags = local.tags
 }
 
 resource "aws_iam_user_policy_attachment" "test-attach" {

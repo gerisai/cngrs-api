@@ -2,8 +2,6 @@ resource "aws_route53_zone" "jidi_dns_zone" {
   name = var.domain_name
 
   comment = "JIDI primary hosted zone"
-
-  tags = local.tags
 }
 
 resource "aws_route53_record" "cngrs_web_cname_record" {

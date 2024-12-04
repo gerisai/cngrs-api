@@ -21,7 +21,7 @@ variable "cngrs_bucket_name" {
 variable "cngr_api_image_tag" {
   type        = string
   description = "Docker image tag to use for CNGRS API"
-  default = "latest"
+  default     = "latest"
 }
 
 variable "cngrs_api_cpu" {

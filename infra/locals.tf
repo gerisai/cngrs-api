@@ -7,10 +7,4 @@ locals {
   cngrs_api_validation_records = { for r in aws_apprunner_custom_domain_association.cngrs_api.certificate_validation_records :
     r.name => r.value
   }
-
-  tags = {
-    Environment = "Production"
-    Project     = "CNGRS"
-    App         = "cngrs-api"
-  }
 }

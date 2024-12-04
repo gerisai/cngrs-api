@@ -4,10 +4,6 @@ resource "aws_apprunner_auto_scaling_configuration_version" "cngrs_api" {
   max_concurrency = 50
   max_size        = 10
   min_size        = 1
-
-  tags = merge({
-    Name = local.app_name
-  }, local.tags)
 }
 
 resource "aws_apprunner_service" "cngrs_api" {
@@ -28,7 +24,7 @@ resource "aws_apprunner_service" "cngrs_api" {
           S3_BUCKET_NAME = var.cngrs_bucket_name
         }, var.cngrs_api_env_vars)
       }
-      image_identifier      = "${aws_ecr_repository.cngrs.repository_url}:${var.cngr_api_image_tag}"
+      image_identifier      = "${aws_ecr_repository.cngrs-api.repository_url}:${var.cngr_api_image_tag}"
       image_repository_type = "ECR"
     }
     auto_deployments_enabled = false
@@ -49,11 +45,6 @@ resource "aws_apprunner_service" "cngrs_api" {
       is_publicly_accessible = true
     }
   }
-
-
-  tags = merge({
-    Name = local.app_name
-  }, local.tags)
 }
 
 resource "aws_apprunner_custom_domain_association" "cngrs_api" {

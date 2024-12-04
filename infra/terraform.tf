@@ -23,6 +23,13 @@ terraform {
 provider "aws" {
   region  = "us-west-2"
   profile = "jidi"
+  default_tags {
+    tags = {
+      Environment = "Production"
+      Project     = "CNGRS"
+      App         = "cngrs-api"
+    }
+  }
 }
 
 provider "mongodbatlas" {}
