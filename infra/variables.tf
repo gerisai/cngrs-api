@@ -18,9 +18,10 @@ variable "cngrs_bucket_name" {
   description = "The name of the S3 Bucket for the CNGRS API"
 }
 
-variable "cngr_api_image" {
+variable "cngr_api_image_tag" {
   type        = string
-  description = "Docker image to use for CNGRS API"
+  description = "Docker image tag to use for CNGRS API"
+  default = "latest"
 }
 
 variable "cngrs_api_cpu" {

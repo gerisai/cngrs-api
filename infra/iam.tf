@@ -55,9 +55,12 @@ resource "aws_iam_role" "cngrs_api_access_role" {
   name = "cngrs_api_access_role"
 
   assume_role_policy  = data.aws_iam_policy_document.cngrs_api_access_trust_policy.json
-  managed_policy_arns = [aws_iam_policy.cngrs_api_access_policy.arn]
-
   tags = local.tags
+}
+
+resource "aws_iam_role_policy_attachment" "cngrs_api_access_role_attachment" {
+  role       = aws_iam_role.cngrs_api_access_role.name
+  policy_arn = aws_iam_policy.cngrs_api_access_policy.arn
 }
 
 data "aws_iam_policy_document" "cngrs_api_instance_trust_policy" {
@@ -113,11 +116,13 @@ resource "aws_iam_policy" "cngrs_api_instance_policy" {
 
 resource "aws_iam_role" "cngrs_api_instance_role" {
   name = "cngrs_api_instance_role"
-
   assume_role_policy  = data.aws_iam_policy_document.cngrs_api_instance_trust_policy.json
-  managed_policy_arns = [aws_iam_policy.cngrs_api_instance_policy.arn]
-
   tags = local.tags
+}
+
+resource "aws_iam_role_policy_attachment" "cngrs_api_instance_role_attachment" {
+  role       = aws_iam_role.cngrs_api_instance_role.name
+  policy_arn = aws_iam_policy.cngrs_api_instance_policy.arn
 }
 
 resource "aws_iam_policy" "gh_actions_runners_policy" {

@@ -1,4 +1,4 @@
-resource "aws_ecr_repository" "cngrs" {
+resource "aws_ecr_repository" "cngrs-api" {
   name                 = "cngrs-api"
   image_tag_mutability = "MUTABLE"
 

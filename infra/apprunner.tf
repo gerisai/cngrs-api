@@ -28,7 +28,7 @@ resource "aws_apprunner_service" "cngrs_api" {
           S3_BUCKET_NAME = var.cngrs_bucket_name
         }, var.cngrs_api_env_vars)
       }
-      image_identifier      = var.cngr_api_image
+      image_identifier      = "${aws_ecr_repository.cngrs.repository_url}:${var.cngr_api_image_tag}"
       image_repository_type = "ECR"
     }
     auto_deployments_enabled = false

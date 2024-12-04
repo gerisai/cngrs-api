@@ -2,7 +2,6 @@ aws_account       = "034362034215"
 aws_region        = "us-west-2"
 domain_name       = "jidi.com.mx"
 cngrs_bucket_name = "cngrs"
-cngr_api_image    = "034362034215.dkr.ecr.us-west-2.amazonaws.com/cngrs-api:latest"
 cngrs_api_cpu     = 256
 cngrs_api_memory  = 512
 cngrs_api_env_vars = {
@@ -14,7 +13,7 @@ cngrs_api_env_vars = {
   AUDIT                = true
   JWT_EXPIRES_IN       = "1d"
   ENABLE_USER_MAIL     = true
-  ENABLE_PERSON_MAIL   = false
+  ENABLE_PERSON_MAIL   = true
   ENABLE_QR            = true
   UPLOAD_TEMP_FILE_DIR = "/tmp"
 }

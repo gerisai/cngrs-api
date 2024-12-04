@@ -10,6 +10,7 @@ locals {
 
   tags = {
     Environment = "Production"
-    App         = "CNGRS"
+    Project     = "CNGRS"
+    App         = "cngrs-api"
   }
 }
