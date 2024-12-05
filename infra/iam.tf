@@ -94,13 +94,6 @@ resource "aws_iam_policy" "cngrs_api_instance_policy" {
       },
       {
         Action = [
-          "ses:SendRawEmail"
-        ]
-        Effect   = "Allow"
-        Resource = "*"
-      },
-      {
-        Action = [
           "secretsmanager:GetSecretValue",
         ]
         Effect = "Allow"
@@ -124,7 +117,7 @@ resource "aws_iam_role_policy_attachment" "cngrs_api_instance_role_attachment" {
 }
 
 resource "aws_iam_policy" "gh_actions_runners_policy" {
-  name        = "gh_actions_runers_policy"
+  name        = "cngrs_api_gh_actions_runers_policy"
   path        = "/"
   description = "GHA Runners Policy"
 
@@ -136,6 +129,8 @@ resource "aws_iam_policy" "gh_actions_runners_policy" {
           "ecr:CompleteLayerUpload",
           "ecr:UploadLayerPart",
           "ecr:InitiateLayerUpload",
+          "ecr:ListImages",
+          "ecr:BatchDeleteImage",
           "ecr:BatchCheckLayerAvailability",
           "ecr:PutImage"
         ]
@@ -166,7 +161,7 @@ resource "aws_iam_user" "gh_actions_runners" {
   path = "/"
 }
 
-resource "aws_iam_user_policy_attachment" "test-attach" {
+resource "aws_iam_user_policy_attachment" "gh_runners_attachment" {
   user       = aws_iam_user.gh_actions_runners.name
   policy_arn = aws_iam_policy.gh_actions_runners_policy.arn
 }
