@@ -28,9 +28,10 @@ export async function createPerson (req,res) {
             personId: personId,
             name: normalizeName(req.body.name),
             email: req.body.email,
-            registered: req.body.registered || false,
+            accessed: req.body.accessed || false,
             gender: req.body.gender,
             cellphone: req.body.cellphone,
+            city: req.body.city || null,
             illness: req.body.illness || null,
             tutor: req.body.tutor || null,
             zone: req.body.zone || null,
@@ -101,13 +102,13 @@ export async function readPerson (req,res) {
                 email: person.email,
                 gender: person.gender,
                 cellphone: person.cellphone,
-                registered: person.registered,
                 zone: person.zone,
                 branch: person.branch,
                 illness: person.illness,
                 tutor: person.tutor,
                 room: person.room,
-                accessed: person.accessed
+                accessed: person.accessed,
+                city: person.city
             },
             message: `Fetched ${person.name}` 
         });
@@ -159,11 +160,11 @@ export async function readPeople (req, res) {
         .select({
             personId: 1,
             name: 1,
-            email: 1,
             zone: 1,
             branch: 1,
             accessed: 1,
-            gender: 1
+            city: 1,
+            room: 1
         })
         .limit(limit).skip(skip);
 

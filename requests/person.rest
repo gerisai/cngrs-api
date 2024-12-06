@@ -47,7 +47,7 @@ Content-Type: application/json
 
 {
   "personId": "josuelopez",
-  "registered": false
+  "accessed": false
 }
 
 ###
