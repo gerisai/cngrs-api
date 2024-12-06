@@ -51,6 +51,10 @@ const PersonSchema = new mongoose.Schema({
         type: Number,
         required: [true, "Number is required"]
     },
+    sentMail: {
+        type: String,
+        default: true
+    },
     city: String,
     illness: String,
     tutor: String,
