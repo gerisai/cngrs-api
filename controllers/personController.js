@@ -1,13 +1,12 @@
+import { v4 as uuidv4 } from 'uuid';
 import Person from '../models/person.js';
 import logger from '../util/logging.js';
 import auditAction from '../util/audit.js';
-import { sendMail } from '../util/mailer.js';
-import { createUploadQr, deleteQr } from '../util/qr.js';
-import { s3BucketUrl } from '../util/constants.js';
 import { parseCsv } from '../util/csv.js';
-import { createPersonId, normalizeName, sleep, sanitize } from '../util/utilities.js';
+import { sendMailMessage } from '../util/sqs.js';
+import { createPersonId, normalizeName, sanitize } from '../util/utilities.js';
 
-const resource = 'PERSON';
+const resource = 'person';
 
 export async function createPerson (req,res) {
     const action = 'CREATE';
@@ -24,9 +23,6 @@ export async function createPerson (req,res) {
     sanitize(req.body);
 
     try {
-        // QR generation
-        if (process.env.ENABLE_QR === "true") await createUploadQr('person', personId);
-
         // Document generation
         const newPerson = await Person.create({
             personId: personId,
@@ -35,7 +31,6 @@ export async function createPerson (req,res) {
             registered: req.body.registered || false,
             gender: req.body.gender,
             cellphone: req.body.cellphone,
-            qrurl: `${s3BucketUrl}/person/${personId}/${personId}.jpeg`,
             illness: req.body.illness || null,
             tutor: req.body.tutor || null,
             zone: req.body.zone || null,
@@ -43,17 +38,12 @@ export async function createPerson (req,res) {
             room: req.body.room || null
         });
 
-        logger.info(`Created person ${personId} in DB with ID: ${newPerson.id}`);
+        logger.info(`Created ${resource} ${personId} in DB with ID: ${newPerson.id}`);
         auditAction(req.user.username, action, resource, newPerson.personId);
         
-        if (process.env.ENABLE_PERSON_MAIL === "true") {
-            sendMail('personOnboarding', newPerson.email, {
-                name: newPerson.name,
-                qrUrl: newPerson.qrurl
-            });
-            const personUpdated = await Person.findOneAndUpdate({ personId }, { sentMail: true })
-            logger.info(`Updated person ${personUpdated.name}`);
-        }
+        // Send mail message
+        await sendMailMessage(resource, newPerson);
+        logger.info(`Queued email for ${newPerson.name}`);
 
         return res.status(200).send({
             name: newPerson.name,
@@ -71,34 +61,20 @@ export async function bulkCreatePerson (req,res) {
         const { tempFilePath: filePath, mimetype: fileType } = req.files.csv;
         const extension = fileType.split('/')[1];
         if (!extension === 'csv') throw new Error('Only CSV files are supported');
-        const peopleList = await parseCsv(filePath, 'person');
+        const peopleList = await parseCsv(filePath, resource);
 
         peopleList.map(u => {
             const personId = createPersonId(u.name);
             u['name'] = normalizeName(u.name);
             u['personId'] = personId;
-            u['qrurl'] = `${s3BucketUrl}/person/${personId}/${personId}.jpeg`;
         });
-
-        if (process.env.ENABLE_QR === "true") {
-            for (const p of peopleList) { // DO NOT USE IT INSIDE MAP FUNCTION OR ERROR BREAK THE APP
-                await createUploadQr('person', p.personId);
-            }
-        }
     
         const people = await Person.insertMany(peopleList);
         logger.info(`Created ${people.length} asistants in DB from list successfully`);
 
-        if (req.query.sendMail === "true" && process.env.ENABLE_MAIL === "true") {
-            for (const p of peopleList) {
-                await sleep(100); // throtle to max 10 mails per second for SES quota (14/s)
-                sendMail('personOnboarding', p.email, {
-                    name: p.name,
-                    qrUrl: p.qrurl
-                });
-                const personUpdated = await User.findOneAndUpdate({ personId: p.personId }, { sentMail: true })
-                logger.info(`Person ${personUpdated.name} updated`);
-            }
+        const groupId = uuidv4(); // Single groupId to avoid multiple instances of lambda from trigerring, respecting SES quotas
+        for (const p of people) {
+            sendMailMessage(resource, p, groupId);
         }
         
         auditAction(req.user.username, action, resource);
@@ -115,7 +91,7 @@ export async function readPerson (req,res) {
         const person = await Person.findOne({ personId });
         if (!person) {
             logger.verbose(`Failed lookup for ${personId}, does not exsit`);
-            return res.status(404).send({ message: `The person ${personId} does not exist` });
+            return res.status(404).send({ message: `The ${resource} ${personId} does not exist` });
         }
         logger.verbose(`Successful lookup for ${personId}`);
         return res.status(200).send({
@@ -232,7 +208,7 @@ export async function updatePerson (req,res) {
     const { personId } = req.body;
     try {
         const person = await Person.findOne({ personId });
-        if (!person) return res.status(404).send({ message: `The person ${personId} does not exist` });
+        if (!person) return res.status(404).send({ message: `The ${resource} ${personId} does not exist` });
         if (req.body.name) req.body.name = normalizeName(req.body.name);
         delete req.body.personId // personId cannot be changed
         Object.assign(person,req.body); // assign updated properties
@@ -240,11 +216,11 @@ export async function updatePerson (req,res) {
             if (!req.body[p]) delete req.body[p]
         }
         const personUpdated = await person.save(); // No password but keeping consistency
-        logger.info(`Updated person ${personUpdated.name}`);
+        logger.info(`Updated ${resource} ${personUpdated.name}`);
         auditAction(req.user.username, action, resource, personUpdated.personId);
         
         return res.status(200).send({
-            message: `Person ${personUpdated.name} updated` 
+            message: `${personUpdated.name} updated` 
         });
     } catch(err) {
         logger.error(err.message);
@@ -259,7 +235,7 @@ export async function deletePerson (req,res) {
     
     try {
         const person = await Person.findOneAndDelete({ personId });
-        if (!person) return res.status(404).send({ message: 'Unexistent person' });
+        if (!person) return res.status(404).send({ message: `Unexistent ${resource}` });
         
         logger.warn(`Deleted ${person.name} successfully`);
         auditAction(req.user.username, action, resource, person.personId);
@@ -268,12 +244,6 @@ export async function deletePerson (req,res) {
     } catch (err) {
         logger.error(err.message);
         return res.status(500).send({ message: err.message });
-    } finally {
-        try {
-            await deleteQr(personId);
-        } catch(err) {
-            logger.error(err.message);
-        }
     }
 }
 

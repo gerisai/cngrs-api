@@ -1,6 +1,7 @@
 locals {
   project_name      = "cngrs"
   app_name          = "cngrs-api"
+  mail_app          = "cngrs-mailer"
   netlify_subdomain = "cngrsweb.netlify.app"
   kms_key_id        = "9a104692-77c7-4136-a0d8-8eaed3d52d9f"
 

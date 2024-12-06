@@ -38,14 +38,10 @@ variable "cngrs_api_env_vars" {
   type = object({
     NODE_ENV             = string
     CORS_ORIGIN          = string
-    OUT_MAIL             = string
     SERVER_PORT          = number
     LOG_LEVEL            = string
     AUDIT                = bool
     JWT_EXPIRES_IN       = string
-    ENABLE_USER_MAIL     = bool
-    ENABLE_PERSON_MAIL   = bool
-    ENABLE_QR            = bool
     UPLOAD_TEMP_FILE_DIR = string
   })
 }

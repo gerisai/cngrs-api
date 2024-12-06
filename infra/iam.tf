@@ -75,6 +75,9 @@ data "aws_iam_policy_document" "cngrs_api_instance_trust_policy" {
   }
 }
 
+data "aws_sqs_queue" "cngrs_mail_queue" {
+  name = "${local.mail_app}-queue.fifo"
+}
 
 resource "aws_iam_policy" "cngrs_api_instance_policy" {
   name        = "cngrs_api_instance_policy"
@@ -91,6 +94,13 @@ resource "aws_iam_policy" "cngrs_api_instance_policy" {
         ]
         Effect   = "Allow"
         Resource = "${aws_s3_bucket.cngrs_bucket.arn}/*"
+      },
+      {
+        Action = [
+          "sqs:SendMessage"
+        ]
+        Effect   = "Allow"
+        Resource = "${data.aws_sqs_queue.cngrs_mail_queue.arn}"
       },
       {
         Action = [

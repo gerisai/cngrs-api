@@ -1,10 +1,11 @@
 import { unlink } from 'fs';
+import { v4 as uuidv4 } from 'uuid';
 import { promisify } from 'util';
 import User from '../models/user.js';
 import Session from '../models/session.js';
 import logger from '../util/logging.js';
 import auditAction from '../util/audit.js';
-import { sendMail } from '../util/mailer.js';
+import { sendMailMessage } from '../util/sqs.js';
 import { s3BucketUrl, s3UserKeyPrefix } from '../util/constants.js';
 import { uploadObjectFromFile, deleteObject } from '../util/s3.js';
 import { parseCsv } from '../util/csv.js';
@@ -13,7 +14,7 @@ import { sanitize, createUsername, createRandomPassword, sleep, normalizeName } 
 const unLink = promisify(unlink);
 let rmPath; // Needed due to variable scoping in uploadAvatar function
 
-const resource = 'USER';
+const resource = 'user';
 
 export async function createUser (req, res) {
     const action = 'CREATE';
@@ -40,22 +41,14 @@ export async function createUser (req, res) {
             email: req.body.email,
             role: req.body.role
         });
-        logger.info(`Created new user ${newUser.username}`);
+        logger.info(`Created new ${resource} ${newUser.username}`);
         auditAction(req.user.username, action, resource, newUser.username);
 
-
-        if (req.body.sendMail && process.env.ENABLE_USER_MAIL === "true") {
-            sendMail('staffOnboarding', newUser.email, {
-                name: newUser.name,
-                user: newUser.username,
-                password: req.body.password,
-                logInUrl: `${process.env.CORS_ORIGIN}/login`
-            });
-            const userUpdated = await User.findOneAndUpdate({ username: newUser.username }, { sentMail: true })
-            logger.info(`User ${userUpdated.name} updated`);
-        }
+        // Send mail message
+        await sendMailMessage(resource, { ...newUser._doc, password: req.body.password }); // Password must be sent clear
+        logger.info(`Queued email for ${newUser.name}`);
         
-        return res.status(200).send({ message: `User ${newUser.username} created successfully` });
+        return res.status(200).send({ message: `${newUser.username} created successfully` });
     } catch(err) {
         if (err.code === 11000) {
             logger.verbose(`Username ${req.body.username} already exist`);
@@ -72,7 +65,7 @@ export async function bulkCreateUser (req,res) {
         const { tempFilePath: filePath, mimetype: fileType } = req.files.csv;
         const extension = fileType.split('/')[1];
         if (!extension === 'csv') throw new Error('Only CSV files are supported');
-        const userList = await parseCsv(filePath, 'user');
+        const userList = await parseCsv(filePath, resource);
 
         userList.map(u => {
             u['username'] = createUsername(u.name);
@@ -84,20 +77,11 @@ export async function bulkCreateUser (req,res) {
         const users = await User.insertMany(userList);
         logger.info(`Created ${users.length} users in DB from list successfully`);
 
-        if (req.query.sendMail === "true" && process.env.ENABLE_MAIL === "true") {
-            for (const u of userList) {
-                await sleep(100); // throtle to max 10 mails per second for SES quota (14/s)
-                sendMail('staffOnboarding', u.email, {
-                    name: u.name,
-                    user: u.username,
-                    password: u.password,
-                    logInUrl: `${process.env.CORS_ORIGIN}/login`
-                });
-                const userUpdated = await User.findOneAndUpdate({ username: u.username }, { sentMail: true })
-                logger.info(`User ${userUpdated.name} updated`);
-            }
+        const groupId = uuidv4(); // Single groupId to avoid multiple instances of lambda from trigerring, respecting SES quotas
+        for (const u of users) {
+            sendMailMessage(resource, u, groupId);
         }
-        
+
         auditAction(req.user.username, action, resource);
         return res.status(200).send({ message: `${users.length} users were created successfully` });
     } catch (err) {
@@ -112,10 +96,10 @@ export async function readUser (req, res) {
     try {
         const user = await User.findOne({ username });
         if (!user) {
-            logger.verbose(`Unexistent user ${username}`);
-            return res.status(404).send({ message: `The user ${username} does not exist` });
+            logger.verbose(`Unexistent ${resource} ${username}`);
+            return res.status(404).send({ message: `The ${resource} ${username} does not exist` });
         }
-        logger.info(`Read user ${user.username} successfully`);
+        logger.info(`Read ${resource} ${user.username} successfully`);
 
         return res.status(200).send({
             user: {
@@ -207,8 +191,8 @@ export async function updateUser (req,res) {
     try {
         const user = await User.findOne({ username });
         if (!user) {
-            logger.verbose(`Unexistent user ${username} cannot be updated`);
-            return res.status(404).send({ message: `The user ${username} does not exist` });
+            logger.verbose(`Unexistent ${resource} ${username} cannot be updated`);
+            return res.status(404).send({ message: `The ${resource} ${username} does not exist` });
         }
         delete req.body.username; // username cannot be overwritten
         for (const p in req.body) { // delete empty values
@@ -217,7 +201,7 @@ export async function updateUser (req,res) {
         if (req.body.name) req.body.name = normalizeName(req.body.name);
         Object.assign(user,req.body); // assign updated properties
         const userUpdated = await user.save(); // must be called for the paswword to be hashed
-        logger.info(`Updated user ${userUpdated.username} successfully`);
+        logger.info(`Updated ${resource} ${userUpdated.username} successfully`);
         auditAction(req.user.username, action, resource, userUpdated.username);
         
         return res.status(200).send({ message: `User ${userUpdated.username} updated` });
@@ -238,16 +222,16 @@ export async function deleteUser (req,res) {
     try {
         const user = await User.findOneAndDelete({ username: req.params.username});
         if (!user) {
-            logger.verbose(`Unexistent user ${req.params.username} cannot be deleted`);
-            return res.status(404).send({ message: 'Unexistent user' });
+            logger.verbose(`Unexistent ${resource} ${req.params.username} cannot be deleted`);
+            return res.status(404).send({ message: `Unexistent ${resource}` });
         }
         if (user.avatar) deleteAvatar = true;
 
         // Delete all user's sessions
         await Session.deleteMany({ username: user.username });
-        logger.verbose(`Deleted user sessions for ${user.username}`);
+        logger.verbose(`Deleted ${resource} sessions for ${user.username}`);
 
-        logger.info(`Deleted user ${user.username} successfully`);
+        logger.info(`Deleted ${resource} ${user.username} successfully`);
         auditAction(req.user.username, action, resource, user.username);
 
         return res.status(200).send({ message: `User ${user.username} deleted successfully` });
@@ -255,11 +239,13 @@ export async function deleteUser (req,res) {
         logger.error(err.message);
         return res.status(500).send({ message: err.message });
     } finally {
-        try {
-            const avatarKey = `${s3UserKeyPrefix}/${req.params.username}/avatar`;
-            await deleteObject(avatarKey);
-        } catch (err) {
-            logger.error(err.message);
+        if (deleteAvatar) {
+            try {
+                const avatarKey = `${s3UserKeyPrefix}/${req.params.username}/avatar`;
+                await deleteObject(avatarKey);
+            } catch (err) {
+                logger.error(err.message);
+            }
         }
     }
 }
@@ -271,8 +257,8 @@ export async function uploadAvatar (req,res) {
         logger.verbose(`Received avatar upload for ${username}`);
         const user = await User.findOne({ username });
         if (!user) {
-            logger.verbose(`Unexistent user ${username} cannot be updated`);
-            return res.status(404).send({ message: `The user ${username} does not exist` });
+            logger.verbose(`Unexistent ${resource} ${username} cannot be updated`);
+            return res.status(404).send({ message: `The ${resource} ${username} does not exist` });
         }
 
         const { path, mimetype } = req.file;
@@ -282,7 +268,7 @@ export async function uploadAvatar (req,res) {
         await uploadObjectFromFile(path, mimetype, avatarKey);
         user.avatar = `${s3BucketUrl}/${avatarKey}`;
         const userUpdated = await user.save();
-        logger.info(`Updated user ${userUpdated.username} successfully`);
+        logger.info(`Updated ${resource} ${userUpdated.username} successfully`);
 
         auditAction(req.user.username, action, resource, username);
 

@@ -22,6 +22,7 @@ resource "aws_apprunner_service" "cngrs_api" {
         runtime_environment_variables = merge({
           AWS_REGION     = var.aws_region
           S3_BUCKET_NAME = var.cngrs_bucket_name
+          SQS_URL        = data.aws_sqs_queue.cngrs_mail_queue.url
         }, var.cngrs_api_env_vars)
       }
       image_identifier      = "${aws_ecr_repository.cngrs-api.repository_url}:${var.cngr_api_image_tag}"

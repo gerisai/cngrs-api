@@ -52,10 +52,6 @@ const UserSchema = new mongoose.Schema({
     avatar: {
         type: String,
         default: null
-    },
-    mailSent: {
-        type: Boolean,
-        default: false
     }
 });
 
