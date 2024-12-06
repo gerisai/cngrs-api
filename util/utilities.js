@@ -25,7 +25,7 @@ export function createRandomPassword(length) {
 
 export function sanitize(fields) {
     for (const p in fields) {
-        fields[p] = fields[p].trim();
+        if (typeof fields[p] === 'string') fields[p] = fields[p].trim();
     }
 }
 
