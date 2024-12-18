@@ -6,7 +6,7 @@ const client = new SQSClient({});
 
 const messageAttributes = {
   user: { Name: 'name', Address: 'email', Username: 'username', Password: 'password' },
-  person: { Name: 'name', Address: 'email', PersonId: 'personId' }
+  person: { Name: 'name', Address: 'email', City: 'city', Room: 'room', PersonId: 'personId' }
 }
 
 export async function sendMailMessage(type, resource, groupId) {
