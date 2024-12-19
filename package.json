@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node ./bin/www",
-    "dev": "source .env && nodemon ./bin/www",
-    "mongoviews": "source .env && node ./scripts/createMongoViews.js"
+    "dev": "source .env.local && nodemon ./bin/www",
+    "mongoviews": "source .env.local && node ./scripts/createMongoViews.js"
   },
   "keywords": [],
   "author": "",
