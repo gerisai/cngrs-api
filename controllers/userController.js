@@ -28,10 +28,6 @@ export async function createUser (req, res) {
         return res.status(400).send({ message: `The ${mandatory.join(', ')} fields are mandatory` });
     }
 
-    if (req.body.role === 'root') {
-        return res.status(403).send({ message: `Root role is reserved and cannot be taken` });
-    }
-    
     sanitize(req.body);
     try {
         const newUser = await User.create({
@@ -39,7 +35,8 @@ export async function createUser (req, res) {
             name: normalizeName(req.body.name),
             password: req.body.password,
             email: req.body.email,
-            role: req.body.role
+            role: req.body.role,
+            internal: false,
         });
         logger.info(`Created new ${resource} ${newUser.username}`);
         auditAction(req.user.username, action, resource, newUser.username);
@@ -71,6 +68,7 @@ export async function bulkCreateUser (req,res) {
             u['username'] = createUsername(u.name);
             u['name'] = normalizeName(u.name);
             u['role'] = 'operator';
+            u['internal'] = false;
             u['password'] = createRandomPassword(8);
         });
     
@@ -133,7 +131,7 @@ export async function readUsers (req, res) {
     const skip = limit * (page - 1) > 0 ? limit*(page - 1) : 0;
     try {
         const users = await User.find(query)
-        .find({ username: { $not: /root/ } })
+        .find({ internal: false })
         .sort({
             name: 1
         })
@@ -159,7 +157,7 @@ export async function readUsers (req, res) {
 
 export async function readUsersNames (req, res) {
     try {
-        const usersNames = await User.find({})
+        const usersNames = await User.find({ internal: false })
         .sort({
             name: 1
         })
@@ -184,8 +182,12 @@ export async function updateUser (req,res) {
     const { username } = req.body;
     const action = 'UPDATE';
 
-    if (req.body.role === 'root' || req.body.username === 'root') {
-        return res.status(403).send({ message: `Root is reserved and cannot be taken or updated` });
+    if (req.body.role === 'root') {
+        return res.status(403).send({ message: `Root role is reserved and cannot be taken or updated` });
+    }
+
+    if (req.body.internal) {
+        return res.status(403).send({ message: `Internal users are reserved and cannot be created in this fashion` });
     }
 
     try {
@@ -214,10 +216,6 @@ export async function updateUser (req,res) {
 export async function deleteUser (req,res) {
     const action = 'DELETE';
     let deleteAvatar = false;
-
-    if (req.params.username === 'root') {
-        return res.status(403).send({ message: `Root user is reserved and cannot be deleted` });
-    }
     
     try {
         const user = await User.findOneAndDelete({ username: req.params.username});

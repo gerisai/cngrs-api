@@ -56,6 +56,10 @@ const UserSchema = new mongoose.Schema({
     sentMail: {
         type: String,
         default: true
+    },
+    internal: {
+        type: Boolean,
+        default: false
     }
 });
 
