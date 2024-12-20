@@ -3,7 +3,7 @@ import fs from 'fs';
 
 const validFields = {
     user: ['name', 'email'],
-    person: ['name', 'email', 'gender', 'cellphone', 'illness', 'tutor', 'zone','branch', 'room']
+    person: ['name', 'email', 'gender', 'cellphone', 'illness', 'tutor', 'zone', 'branch', 'room', 'age', 'city', 'activity']
 }
 
 function arraysEqual(a, b) {
