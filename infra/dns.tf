@@ -37,10 +37,43 @@ resource "aws_route53_record" "cngrs_api_cname_validation" {
   records  = [each.value]
 }
 
-resource "aws_route53_record" "example_amazonses_verification_record" {
+resource "aws_route53_record" "amazonses_verification_record" {
   zone_id = aws_route53_zone.jidi_dns_zone.id
   name    = "_amazonses"
   type    = "TXT"
   ttl     = "600"
   records = [aws_ses_domain_identity.example.verification_token]
+}
+
+# GoDaddy mail configuration
+resource "aws_route53_record" "godaddy_spf_record" {
+  zone_id = aws_route53_zone.jidi_dns_zone.id
+  name    = ""
+  type    = "TXT"
+  ttl     = "600"
+  records = ["D7580420", "v=spf1 include:secureserver.net -all"]
+}
+
+resource "aws_route53_record" "godaddy_cname_records" {
+  zone_id = aws_route53_zone.jidi_dns_zone.zone_id
+  name    = "email"
+  ttl     = 300
+  type    = "CNAME"
+  records = ["email.secureserver.net"]
+}
+
+resource "aws_route53_record" "godaddy_mx_record" {
+  zone_id = aws_route53_zone.jidi_dns_zone.zone_id
+  name    = ""
+  ttl     = 300
+  type    = "MX"
+  records = ["0 smtp.secureserver.net", "10 mailstore1.secureserver.net"]
+}
+
+resource "aws_route53_record" "godaddy_srv_record" {
+  zone_id = aws_route53_zone.jidi_dns_zone.zone_id
+  name    = ""
+  ttl     = 300
+  type    = "SRV"
+  records = ["100 1 443 autodiscover.secureserver.net"]
 }
