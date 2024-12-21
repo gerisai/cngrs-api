@@ -265,7 +265,33 @@ export async function getStats (req,res) {
 
         return res.status(200).send({
             count,
-            message: `People fetched successfully`
+            message: `Statistics fetched successfully`
+        });
+    } catch(err) {
+        logger.error(err.message);
+        return res.status(500).send({ message: err.message });
+    }
+}
+
+export async function getCityStats (req,res) {
+    const stats = [];
+    try {
+        const cities = await Person.distinct('city');
+        for (const c of cities) {
+            stats.push({ 
+                city: c,
+                count: {
+                    male: await Person.countDocuments({ city: c, gender: 'male' }),
+                    female: await Person.countDocuments({ city: c, gender: 'female' })
+                }
+            });
+        }
+
+        logger.info(`Checked city statistics successfully`);
+
+        return res.status(200).send({
+            stats,
+            message: `City stats fetched successfully`
         });
     } catch(err) {
         logger.error(err.message);

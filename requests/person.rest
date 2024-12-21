@@ -62,3 +62,8 @@ Content-Type: application/json
 # Get stats
 GET {{baseUrl}}/people/stats?accessed=1
 Authorization: Bearer {{authToken}}
+
+###
+# Get city stats
+GET {{baseUrl}}/people/stats/city
+Authorization: Bearer {{authToken}}

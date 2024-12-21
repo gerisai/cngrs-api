@@ -11,6 +11,7 @@ router.get('/allnames', checkAuth, checkRole, personController.readPeopleNames);
 router.post('/bulkcreate', checkAuth, checkRole, personController.bulkCreatePerson);
 router.get('/category', checkAuth, checkRole, personController.getPersonCategory);
 router.get('/stats', checkAuth, checkRole, personController.getStats);
+router.get('/stats/city', checkAuth, checkRole, personController.getCityStats);
 router.get('/:personId', checkAuth, checkRole, personController.readPerson);
 router.delete('/:personId', checkAuth, checkRole, personController.deletePerson);
 
