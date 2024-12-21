@@ -22,7 +22,7 @@ export async function sendMailMessage(type, resource, groupId) {
   }
 
   message.attributes = msgattributes;
-  sendMessage(message, resource._id, groupId);
+  await sendMessage(message, resource._id, groupId);
 }
 
 export async function sendMessage(message, id, groupId) {
